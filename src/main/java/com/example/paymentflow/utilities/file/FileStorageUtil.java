@@ -1,12 +1,14 @@
 
 package com.example.paymentflow.utilities.file;
 
-import com.shared.utilities.fileupload.FileStorageService;
-import com.shared.utilities.fileupload.FileMetadata;
+import java.io.IOException;
+
+import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import org.slf4j.Logger;
+
+import com.shared.utilities.fileupload.FileMetadata;
+import com.shared.utilities.fileupload.FileStorageService;
 import com.shared.utilities.logger.LoggerFactoryProvider;
 
 @Component
@@ -21,9 +23,12 @@ public class FileStorageUtil {
     }
 
     /**
-     * Store a file in a category-specific subfolder under the base upload directory.
-     * @param file the file to store
-     * @param category the subfolder/category (e.g. "workerpayments", "employerdata", "masterdata")
+     * Store a file in a category-specific subfolder under the base upload
+     * directory.
+     * 
+     * @param file     the file to store
+     * @param category the subfolder/category (e.g. "workerpayments",
+     *                 "employerdata", "masterdata")
      * @param fileName the file name to use
      * @return the absolute path to the stored file
      */
@@ -36,7 +41,8 @@ public class FileStorageUtil {
      * Store a file and return the UploadedFile entity directly
      * This avoids the need to look up the file record after storing
      */
-    public UploadedFile storeFileAndReturnEntity(MultipartFile file, String category, String fileName) throws IOException {
+    public UploadedFile storeFileAndReturnEntity(MultipartFile file, String category, String fileName)
+            throws IOException {
         return storeFileInternal(file, category, fileName);
     }
 
@@ -48,9 +54,10 @@ public class FileStorageUtil {
 
         FileMetadata metadata = fileStorageService.storeFile(file, category, fileName);
 
-        if (!metadata.getFileHash().isEmpty() && uploadedFileRepository.findByFileHash(metadata.getFileHash()).isPresent()) {
-            // Delete the stored file if duplicate
-            java.nio.file.Files.deleteIfExists(java.nio.file.Path.of(metadata.getStoredPath()));
+        if (!metadata.getFileHash().isEmpty()
+                && uploadedFileRepository.findByFileHash(metadata.getFileHash()).isPresent()) {
+            // Delegate file deletion to FileStorageService
+            fileStorageService.deleteFileByPath(metadata.getStoredPath());
             throw new IOException("Duplicate file: a file with the same content already exists.");
         }
 

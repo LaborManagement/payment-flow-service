@@ -1,8 +1,12 @@
 package com.example.paymentflow.master.entity;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import com.shared.entityaudit.annotation.EntityAuditEnabled;
 import com.shared.entityaudit.descriptor.AbstractAuditableEntity;
 import com.shared.entityaudit.listener.SharedEntityAuditListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -14,8 +18,6 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
-import java.util.Map;
 
 @Entity
 @EntityAuditEnabled
@@ -27,25 +29,36 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "toli_id", nullable = false, unique = true, length = 64)
-    private String toliId;
+    @Column(name = "board_id", nullable = false, length = 64)
+    private String boardId;
 
-    @Column(name = "serial_no", unique = true, length = 64)
-    private String serialNo;
+    @Column(name = "employer_id", nullable = false, length = 64)
+    private String employerId;
 
-    @Column(name = "registration_no", nullable = false, unique = true, length = 64)
-    private String registrationNo;
+    @Column(name = "registration_number", nullable = false, unique = true, length = 64)
+    @NotBlank(message = "Registration number is required")
+    @Size(max = 64, message = "Registration number cannot exceed 64 characters")
+    private String registrationNumber;
 
-    @Column(name = "establishment_name", nullable = false, length = 200)
-    @NotBlank(message = "Establishment name is required")
-    @Size(max = 200, message = "Establishment name cannot exceed 200 characters")
-    private String establishmentName;
+    @Column(name = "employer_name_marathi", nullable = false, length = 200)
+    @NotBlank(message = "Employer name (Marathi) is required")
+    @Size(max = 200, message = "Employer name (Marathi) cannot exceed 200 characters")
+    private String employerNameMarathi;
 
     @Column(name = "address", length = 255)
     private String address;
 
-    @Column(name = "establishment_name_secondary", length = 200)
-    private String establishmentNameSecondary;
+    @Column(name = "employer_name_english", length = 200)
+    @Size(max = 200, message = "Employer name (English) cannot exceed 200 characters")
+    private String employerNameEnglish;
+
+    @Column(name = "mobile_number", length = 15)
+    @Size(max = 15, message = "Mobile number cannot exceed 15 characters")
+    private String mobileNumber;
+
+    @Column(name = "email_id", length = 150)
+    @Size(max = 150, message = "Email ID cannot exceed 150 characters")
+    private String emailId;
 
     @Column(name = "status", nullable = false, length = 32)
     private String status = "ACTIVE";
@@ -55,6 +68,14 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public String getEmployerId() {
+        return employerId;
+    }
+
+    public void setEmployerId(String employerId) {
+        this.employerId = employerId;
+    }
 
     public ToliMaster() {
     }
@@ -81,36 +102,28 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
         this.id = id;
     }
 
-    public String getToliId() {
-        return toliId;
+    public String getBoardId() {
+        return boardId;
     }
 
-    public void setToliId(String toliId) {
-        this.toliId = toliId;
+    public void setBoardId(String boardId) {
+        this.boardId = boardId;
     }
 
-    public String getSerialNo() {
-        return serialNo;
+    public String getRegistrationNumber() {
+        return registrationNumber;
     }
 
-    public void setSerialNo(String serialNo) {
-        this.serialNo = serialNo;
+    public void setRegistrationNumber(String registrationNumber) {
+        this.registrationNumber = registrationNumber;
     }
 
-    public String getRegistrationNo() {
-        return registrationNo;
+    public String getEmployerNameMarathi() {
+        return employerNameMarathi;
     }
 
-    public void setRegistrationNo(String registrationNo) {
-        this.registrationNo = registrationNo;
-    }
-
-    public String getEstablishmentName() {
-        return establishmentName;
-    }
-
-    public void setEstablishmentName(String establishmentName) {
-        this.establishmentName = establishmentName;
+    public void setEmployerNameMarathi(String employerNameMarathi) {
+        this.employerNameMarathi = employerNameMarathi;
     }
 
     public String getAddress() {
@@ -121,12 +134,28 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
         this.address = address;
     }
 
-    public String getEstablishmentNameSecondary() {
-        return establishmentNameSecondary;
+    public String getEmployerNameEnglish() {
+        return employerNameEnglish;
     }
 
-    public void setEstablishmentNameSecondary(String establishmentNameSecondary) {
-        this.establishmentNameSecondary = establishmentNameSecondary;
+    public void setEmployerNameEnglish(String employerNameEnglish) {
+        this.employerNameEnglish = employerNameEnglish;
+    }
+
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
+    }
+
+    public String getEmailId() {
+        return emailId;
+    }
+
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
     }
 
     public String getStatus() {
@@ -162,15 +191,16 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
     public Map<String, Object> auditState() {
         return auditStateOf(
                 "id", id,
-                "toliId", toliId,
-                "serialNo", serialNo,
-                "registrationNo", registrationNo,
-                "establishmentName", establishmentName,
+                "boardId", boardId,
+                "employerId", employerId,
+                "registrationNumber", registrationNumber,
+                "employerNameMarathi", employerNameMarathi,
                 "address", address,
-                "establishmentNameSecondary", establishmentNameSecondary,
+                "employerNameEnglish", employerNameEnglish,
+                "mobileNumber", mobileNumber,
+                "emailId", emailId,
                 "status", status,
                 "createdAt", createdAt != null ? createdAt.toString() : null,
-                "updatedAt", updatedAt != null ? updatedAt.toString() : null
-        );
+                "updatedAt", updatedAt != null ? updatedAt.toString() : null);
     }
 }

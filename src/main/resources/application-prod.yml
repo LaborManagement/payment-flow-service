@@ -135,3 +135,18 @@ shared-lib:
       url: ${AUTH_SERVICE_BASE_URL:http://auth-service.payment-recon.svc.cluster.local}/internal/auth/introspect
       api-key: ${INTERNAL_API_KEY:}
       api-key-header: X-Internal-Api-Key
+  audit:
+    enabled: true
+    table-name: audit.audit_event
+    service-name: payment-flow-service
+    source-schema: payment_flow
+    hashing-algorithm: SHA-256
+    initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
+  entity-audit:
+    enabled: true
+    table-name: audit.entity_audit_event
+    service-name: payment-flow-service
+    source-schema: payment_flow
+    source-table: worker_payments
+    hashing-algorithm: SHA-256
+    initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000

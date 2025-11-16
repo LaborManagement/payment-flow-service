@@ -1,14 +1,25 @@
 package com.example.paymentflow.master.entity;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import com.shared.entityaudit.annotation.EntityAuditEnabled;
 import com.shared.entityaudit.descriptor.AbstractAuditableEntity;
 import com.shared.entityaudit.listener.SharedEntityAuditListener;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
-import java.util.Map;
 
 @Entity
 @EntityAuditEnabled
@@ -20,19 +31,22 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employer_id", nullable = false, unique = true, length = 64)
-    private String employerId;
+    @Column(name = "board_id", nullable = false, length = 64)
+    private String boardId;
 
     @Column(name = "serial_no", unique = true, length = 64)
     private String serialNo;
 
-    @Column(name = "registration_no", nullable = false, unique = true, length = 64)
+    @Column(name = "registration_number", nullable = false, unique = true, length = 64)
     private String registrationNo;
 
     @Column(name = "establishment_name", nullable = false, length = 200)
     @NotBlank(message = "Establishment name is required")
     @Size(max = 200, message = "Establishment name cannot exceed 200 characters")
     private String establishmentName;
+
+    @Column(name = "employer_name", length = 200)
+    private String employerName;
 
     @Column(name = "address", length = 255)
     private String address;
@@ -44,6 +58,14 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     @Pattern(regexp = "^[0-9]{10}$", message = "Mobile number must be 10 digits")
     private String mobileNumber;
 
+    @Column(name = "email_id", length = 150)
+    @Email(message = "Email ID format is invalid")
+    private String emailId;
+
+    @Column(name = "aadhar_number", length = 12)
+    @Pattern(regexp = "^[0-9]{12}$", message = "Aadhar number must be 12 digits")
+    private String aadharNumber;
+
     @Column(name = "aadhaar_number", unique = true, length = 12)
     @Pattern(regexp = "^[0-9]{12}$", message = "Aadhaar number must be 12 digits")
     private String aadhaarNumber;
@@ -52,9 +74,11 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     @Pattern(regexp = "^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "PAN number format is invalid")
     private String panNumber;
 
-    @Column(name = "tan_number", length = 10)
-    @Pattern(regexp = "^[A-Z]{4}[0-9]{5}[A-Z]{1}$", message = "TAN number format is invalid")
+    @Column(name = "tan_number", length = 16)
     private String tanNumber;
+
+    @Column(name = "virtual_bank_account_number", length = 64)
+    private String virtualBankAccountNumber;
 
     @Column(name = "status", nullable = false, length = 32)
     private String status = "ACTIVE";
@@ -75,7 +99,9 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
         if (createdAt == null) {
             createdAt = now;
         }
-        updatedAt = now;
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
     }
 
     @PreUpdate
@@ -84,6 +110,7 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     }
 
     // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -92,12 +119,12 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
         this.id = id;
     }
 
-    public String getEmployerId() {
-        return employerId;
+    public String getBoardId() {
+        return boardId;
     }
 
-    public void setEmployerId(String employerId) {
-        this.employerId = employerId;
+    public void setBoardId(String boardId) {
+        this.boardId = boardId;
     }
 
     public String getSerialNo() {
@@ -124,6 +151,14 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
         this.establishmentName = establishmentName;
     }
 
+    public String getEmployerName() {
+        return employerName;
+    }
+
+    public void setEmployerName(String employerName) {
+        this.employerName = employerName;
+    }
+
     public String getAddress() {
         return address;
     }
@@ -148,6 +183,22 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
         this.mobileNumber = mobileNumber;
     }
 
+    public String getEmailId() {
+        return emailId;
+    }
+
+    public void setEmailId(String emailId) {
+        this.emailId = emailId;
+    }
+
+    public String getAadharNumber() {
+        return aadharNumber;
+    }
+
+    public void setAadharNumber(String aadharNumber) {
+        this.aadharNumber = aadharNumber;
+    }
+
     public String getAadhaarNumber() {
         return aadhaarNumber;
     }
@@ -161,7 +212,7 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     }
 
     public void setPanNumber(String panNumber) {
-        this.panNumber = panNumber;
+        this.panNumber = normalizeAlphaNumeric(panNumber);
     }
 
     public String getTanNumber() {
@@ -169,7 +220,15 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     }
 
     public void setTanNumber(String tanNumber) {
-        this.tanNumber = tanNumber;
+        this.tanNumber = normalizeAlphaNumeric(tanNumber);
+    }
+
+    public String getVirtualBankAccountNumber() {
+        return virtualBankAccountNumber;
+    }
+
+    public void setVirtualBankAccountNumber(String virtualBankAccountNumber) {
+        this.virtualBankAccountNumber = virtualBankAccountNumber;
     }
 
     public String getStatus() {
@@ -196,22 +255,6 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
         this.updatedAt = updatedAt;
     }
 
-    /**
-     * Backwards compatible getter for legacy naming.
-     */
-    @Deprecated(forRemoval = false)
-    public String getEmployerName() {
-        return establishmentName;
-    }
-
-    /**
-     * Backwards compatible setter for legacy naming.
-     */
-    @Deprecated(forRemoval = false)
-    public void setEmployerName(String employerName) {
-        this.establishmentName = employerName;
-    }
-
     @Override
     public String entityType() {
         return "EMPLOYER_MASTER";
@@ -221,19 +264,29 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     public Map<String, Object> auditState() {
         return auditStateOf(
                 "id", id,
-                "employerId", employerId,
+                // removed employerId
                 "serialNo", serialNo,
                 "registrationNo", registrationNo,
                 "establishmentName", establishmentName,
+                "employerName", employerName,
                 "address", address,
                 "ownerName", ownerName,
                 "mobileNumber", mobileNumber,
+                "emailId", emailId,
+                "aadharNumber", aadharNumber,
                 "aadhaarNumber", aadhaarNumber,
                 "panNumber", panNumber,
                 "tanNumber", tanNumber,
+                "virtualBankAccountNumber", virtualBankAccountNumber,
                 "status", status,
                 "createdAt", createdAt != null ? createdAt.toString() : null,
-                "updatedAt", updatedAt != null ? updatedAt.toString() : null
-        );
+                "updatedAt", updatedAt != null ? updatedAt.toString() : null);
+    }
+    private String normalizeAlphaNumeric(String value) {
+        if (value == null) {
+            return null;
+        }
+        String cleaned = value.trim();
+        return cleaned.isEmpty() ? null : cleaned.toUpperCase();
     }
 }

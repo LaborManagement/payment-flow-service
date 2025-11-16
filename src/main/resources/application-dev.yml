@@ -63,11 +63,18 @@ shared-lib:
   audit:
     enabled: true  # Set to true to enable audit logging
     table-name: audit.audit_event
+    table-name: audit.audit_event
+    service-name: payment-flow-service
+    source-schema: payment_flow
     hashing-algorithm: SHA-256
     initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
   entity-audit:
     enabled: true  # Enable entity-level auditing (requires DataSource)
     table-name: audit.entity_audit_event
+    table-name: audit.entity_audit_event
+    service-name: payment-flow-service
+    source-schema: payment_flow
+    source-table: worker_payments
     hashing-algorithm: SHA-256
     initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
   # SFTP Utility Configuration

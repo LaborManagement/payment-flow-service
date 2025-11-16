@@ -1,0 +1,2 @@
+board_id,board_name,board_code,state_name,district_name,address,contact_person,contact_email,contact_phone,status,created_at,updated_at
+BRD1,Construction Board,CB001,Maharashtra,Pune,456 Board Rd,Jane Smith,jane@board.com,9123456789,ACTIVE,2025-11-16,2025-11-16

@@ -1,18 +1,28 @@
 package com.example.paymentflow.master.entity;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import com.shared.entityaudit.annotation.EntityAuditEnabled;
 import com.shared.entityaudit.descriptor.AbstractAuditableEntity;
 import com.shared.entityaudit.listener.SharedEntityAuditListener;
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.Map;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @EntityAuditEnabled
 @EntityListeners(SharedEntityAuditListener.class)
 @Table(name = "board_master")
 public class BoardMaster extends AbstractAuditableEntity<Long> {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -196,7 +206,6 @@ public class BoardMaster extends AbstractAuditableEntity<Long> {
                 "contactPhone", contactPhone,
                 "status", status,
                 "createdAt", createdAt != null ? createdAt.toString() : null,
-                "updatedAt", updatedAt != null ? updatedAt.toString() : null
-        );
+                "updatedAt", updatedAt != null ? updatedAt.toString() : null);
     }
 }
