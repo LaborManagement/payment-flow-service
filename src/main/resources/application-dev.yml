@@ -62,12 +62,12 @@ management:
 shared-lib:
   audit:
     enabled: true  # Set to true to enable audit logging
-    table-name: audit_event
+    table-name: audit.audit_event
     hashing-algorithm: SHA-256
     initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
   entity-audit:
     enabled: true  # Enable entity-level auditing (requires DataSource)
-    table-name: entity_audit_event
+    table-name: audit.entity_audit_event
     hashing-algorithm: SHA-256
     initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
   # SFTP Utility Configuration
