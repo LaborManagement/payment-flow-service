@@ -11,11 +11,11 @@ spring:
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
-      idle-timeout: 600000          # 10 minutes
-      max-lifetime: 1800000         # 30 minutes
-      connection-timeout: 30000     # 30 seconds
-      auto-commit: true             # Important: allows transaction-local settings
-      leak-detection-threshold: 60000  # 1 minute
+      idle-timeout: 600000 # 10 minutes
+      max-lifetime: 1800000 # 30 minutes
+      connection-timeout: 30000 # 30 seconds
+      auto-commit: true # Important: allows transaction-local settings
+      leak-detection-threshold: 60000 # 1 minute
       data-source-properties:
         preparedStatementCacheSize: 250
         preparedStatementCacheSqlLimit: 2048
@@ -61,30 +61,23 @@ management:
 # Audit Utility Configuration
 shared-lib:
   audit:
-    enabled: true  # Set to true to enable audit logging
-    table-name: audit.audit_event
-    service-name: payment-flow-service
-    source-schema: payment_flow
+    enabled: true # Set to true to enable audit logging
     table-name: audit.audit_event
     service-name: payment-flow-service
     source-schema: payment_flow
     hashing-algorithm: SHA-256
     initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
   entity-audit:
-    enabled: true  # Enable entity-level auditing (requires DataSource)
+    enabled: true # Enable entity-level auditing (requires DataSource)
     table-name: audit.entity_audit_event
+    source-table: worker_payments
     service-name: payment-flow-service
     source-schema: payment_flow
-    source-table: worker_payments
-    table-name: audit.entity_audit_event
-    service-name: payment-flow-service
-    source-schema: payment_flow
-    source-table: worker_payments
     hashing-algorithm: SHA-256
     initial-hash-value: 0000000000000000000000000000000000000000000000000000000000000000
   # SFTP Utility Configuration
   sftp:
-    enabled: false  # Set to true to enable SFTP operations
+    enabled: false # Set to true to enable SFTP operations
     host: localhost
     port: 22
     username: user
@@ -115,10 +108,10 @@ shared-lib:
       fail-open: false
 
   filters:
-    enabled: true 
+    enabled: true
   file-upload:
     enabled: true
-    base-dir: /Users/rahulcharvekar/Documents/Repos/LBE/PaymentReconciliation/payment-flow-service/uploads/dev/ 
+    base-dir: /Users/rahulcharvekar/Documents/Repos/LBE/PaymentReconciliation/payment-flow-service/uploads/dev/
 
 server:
   port: 8081
