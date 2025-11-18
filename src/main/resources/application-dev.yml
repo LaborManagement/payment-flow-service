@@ -2,7 +2,7 @@
 spring:
   datasource:
     # PostgreSQL connection for payment-flow service with RLS/VPD
-    url: jdbc:postgresql://localhost:5432/labormanagement?currentSchema=payment_flow
+    url: jdbc:postgresql://localhost:5432/lbe?currentSchema=payment_flow
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:app_payment_flow}
     password: ${DB_PASSWORD:root}
