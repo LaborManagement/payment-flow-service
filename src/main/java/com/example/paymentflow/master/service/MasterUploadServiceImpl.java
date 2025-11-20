@@ -21,6 +21,7 @@ import com.example.paymentflow.master.repository.EmployerMasterRepository;
 import com.example.paymentflow.master.repository.ToliMasterRepository;
 import com.example.paymentflow.master.repository.WorkerMasterRepository;
 import com.example.paymentflow.master.util.MasterFileParser;
+import com.shared.common.dao.TenantAccessDao;
 import com.shared.security.JwtAuthenticationDetails;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -31,7 +32,7 @@ import jakarta.persistence.PersistenceContext;
 @Service
 
 public class MasterUploadServiceImpl implements MasterUploadService {
-    private final UserTenantAclClient userTenantAclClient;
+    private final TenantAccessDao tenantAccessDao;
     private final EmployerMasterRepository employerMasterRepository;
     private final ToliMasterRepository toliMasterRepository;
     private final WorkerMasterRepository workerMasterRepository;
@@ -41,12 +42,12 @@ public class MasterUploadServiceImpl implements MasterUploadService {
 
     @Autowired
     public MasterUploadServiceImpl(
-            UserTenantAclClient userTenantAclClient,
+            TenantAccessDao tenantAccessDao,
             EmployerMasterRepository employerMasterRepository,
             ToliMasterRepository toliMasterRepository,
             WorkerMasterRepository workerMasterRepository,
             BoardMasterRepository boardMasterRepository) {
-        this.userTenantAclClient = userTenantAclClient;
+        this.tenantAccessDao = tenantAccessDao;
         this.employerMasterRepository = employerMasterRepository;
         this.toliMasterRepository = toliMasterRepository;
         this.workerMasterRepository = workerMasterRepository;
@@ -71,8 +72,14 @@ public class MasterUploadServiceImpl implements MasterUploadService {
         if (userId == null) {
             throw new IllegalStateException("User ID not found in authentication context");
         }
-        UserTenantAclClient.UserTenantAclInfo acl = userTenantAclClient.getAclForUser(userId);
-        return new UserContext(userId.toString(), acl.getBoardId(), acl.getEmployerId());
+        TenantAccessDao.TenantAccess tenantAccess = tenantAccessDao.getFirstAccessibleTenant();
+        if (tenantAccess == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "User has no tenant access assigned");
+        }
+        String boardId = tenantAccess.boardId != null ? tenantAccess.boardId.toString() : null;
+        String employerId = tenantAccess.employerId != null ? tenantAccess.employerId.toString() : null;
+        return new UserContext(userId.toString(), boardId, employerId);
     }
 
     @Override

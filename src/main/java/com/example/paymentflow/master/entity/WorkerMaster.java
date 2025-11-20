@@ -31,8 +31,8 @@ public class WorkerMaster extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "board_id", nullable = false, length = 64)
-    private String boardId;
+    @Column(name = "board_id", nullable = false)
+    private Long boardId;
 
     @Column(name = "worker_name_marathi", nullable = false, length = 120)
     @NotBlank(message = "Worker name (Marathi) is required")
@@ -137,11 +137,11 @@ public class WorkerMaster extends AbstractAuditableEntity<Long> {
         this.id = id;
     }
 
-    public String getBoardId() {
+    public Long getBoardId() {
         return boardId;
     }
 
-    public void setBoardId(String boardId) {
+    public void setBoardId(Long boardId) {
         this.boardId = boardId;
     }
 

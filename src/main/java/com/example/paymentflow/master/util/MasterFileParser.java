@@ -39,7 +39,7 @@ public class MasterFileParser {
                         .parse(reader)) {
             for (CSVRecord record : parser) {
                 ToliMaster entity = new ToliMaster();
-                entity.setBoardId(boardId);
+                entity.setBoardId(boardId != null && !boardId.isBlank() ? Long.parseLong(boardId.trim()) : null);
                 entity.setEmployerId(employerId);
                 entity.setRegistrationNumber(getValue(record, "registration_number", "registration_no"));
                 entity.setEmployerNameMarathi(getValue(record,
@@ -87,7 +87,7 @@ public class MasterFileParser {
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
                 ToliMaster entity = new ToliMaster();
-                entity.setBoardId(boardId);
+                entity.setBoardId(boardId != null && !boardId.isBlank() ? Long.parseLong(boardId.trim()) : null);
                 entity.setEmployerId(employerId);
                 entity.setRegistrationNumber(requireCellValue(row, 0, "registration_number"));
                 entity.setEmployerNameMarathi(requireCellValue(row, 1, "employer_name_marathi"));
@@ -407,7 +407,7 @@ public class MasterFileParser {
         return null;
     }
 
-    private static String resolveBoardId(String contextBoardId, String fileBoardId) {
+    private static Long resolveBoardId(String contextBoardId, String fileBoardId) {
         String resolved = null;
         if (contextBoardId != null && !contextBoardId.isBlank()) {
             resolved = contextBoardId;
@@ -418,8 +418,11 @@ public class MasterFileParser {
         if (resolved == null || resolved.isBlank()) {
             throw new IllegalArgumentException("board_id is required either in the upload file or user context");
         }
-        // Context board ID always wins; file value is informative only.
-        return resolved;
+        try {
+            return Long.parseLong(resolved.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid board_id: must be a number, got '" + resolved + "'");
+        }
     }
 
     private static LocalDateTime parseDateTime(String value) {

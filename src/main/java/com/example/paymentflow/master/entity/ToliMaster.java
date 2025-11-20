@@ -29,8 +29,8 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "board_id", nullable = false, length = 64)
-    private String boardId;
+    @Column(name = "board_id", nullable = false)
+    private Long boardId;
 
     @Column(name = "employer_id", nullable = false, length = 64)
     private String employerId;
@@ -102,11 +102,11 @@ public class ToliMaster extends AbstractAuditableEntity<Long> {
         this.id = id;
     }
 
-    public String getBoardId() {
+    public Long getBoardId() {
         return boardId;
     }
 
-    public void setBoardId(String boardId) {
+    public void setBoardId(Long boardId) {
         this.boardId = boardId;
     }
 

@@ -27,8 +27,8 @@ public class BoardMaster extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "board_id", nullable = false, unique = true, length = 64)
-    private String boardId;
+    @Column(name = "board_id", nullable = false, unique = true)
+    private Long boardId;
 
     @Column(name = "board_name", nullable = false, length = 200)
     private String boardName;
@@ -90,11 +90,11 @@ public class BoardMaster extends AbstractAuditableEntity<Long> {
         this.id = id;
     }
 
-    public String getBoardId() {
+    public Long getBoardId() {
         return boardId;
     }
 
-    public void setBoardId(String boardId) {
+    public void setBoardId(Long boardId) {
         this.boardId = boardId;
     }
 

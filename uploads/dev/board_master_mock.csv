@@ -1,0 +1,3 @@
+board_id,board_name,board_code,state_name,district_name,address,contact_person,contact_email,contact_phone,status,created_at,updated_at
+101,Test Board,TB001,Maharashtra,Mumbai,123 Test St,John Doe,john@test.com,9876543210,ACTIVE,2025-11-20,2025-11-20
+102,Sample Board,SB002,Gujarat,Ahmedabad,789 Sample Ave,Jane Roe,jane@sample.com,9988776655,INACTIVE,2025-11-19,2025-11-19

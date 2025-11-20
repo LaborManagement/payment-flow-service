@@ -12,7 +12,7 @@ public class UserTenantAclClient {
     public UserTenantAclInfo getAclForUser(Long userId) {
         // TODO: Replace with actual call to auth-service
         // For now, return mock data
-        return new UserTenantAclInfo("mockBoardId", "mockEmployerId");
+        return new UserTenantAclInfo("1", "mockEmployerId");
     }
 
     public static class UserTenantAclInfo {

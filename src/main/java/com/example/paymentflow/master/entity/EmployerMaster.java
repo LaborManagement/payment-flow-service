@@ -31,8 +31,8 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "board_id", nullable = false, length = 64)
-    private String boardId;
+    @Column(name = "board_id", nullable = false)
+    private Long boardId;
 
     @Column(name = "serial_no", unique = true, length = 64)
     private String serialNo;
@@ -119,11 +119,11 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
         this.id = id;
     }
 
-    public String getBoardId() {
+    public Long getBoardId() {
         return boardId;
     }
 
-    public void setBoardId(String boardId) {
+    public void setBoardId(Long boardId) {
         this.boardId = boardId;
     }
 
@@ -282,6 +282,7 @@ public class EmployerMaster extends AbstractAuditableEntity<Long> {
                 "createdAt", createdAt != null ? createdAt.toString() : null,
                 "updatedAt", updatedAt != null ? updatedAt.toString() : null);
     }
+
     private String normalizeAlphaNumeric(String value) {
         if (value == null) {
             return null;
