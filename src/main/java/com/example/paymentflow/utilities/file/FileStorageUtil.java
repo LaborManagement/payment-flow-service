@@ -33,7 +33,7 @@ public class FileStorageUtil {
      * @return the absolute path to the stored file
      */
     public String storeFile(MultipartFile file, String category, String fileName) throws IOException {
-        UploadedFile savedFile = storeFileInternal(file, category, fileName);
+        UploadedFile savedFile = storeFileInternal(file, category, fileName, null, null, null);
         return savedFile.getStoredPath();
     }
 
@@ -43,10 +43,19 @@ public class FileStorageUtil {
      */
     public UploadedFile storeFileAndReturnEntity(MultipartFile file, String category, String fileName)
             throws IOException {
-        return storeFileInternal(file, category, fileName);
+        return storeFileInternal(file, category, fileName, null, null, null);
     }
 
-    private UploadedFile storeFileInternal(MultipartFile file, String category, String fileName) throws IOException {
+    /**
+     * Store a file with tenant context populated for RLS-protected tables.
+     */
+    public UploadedFile storeFileAndReturnEntity(MultipartFile file, String category, String fileName, Integer boardId,
+            Integer employerId, Integer toliId) throws IOException {
+        return storeFileInternal(file, category, fileName, boardId, employerId, toliId);
+    }
+
+    private UploadedFile storeFileInternal(MultipartFile file, String category, String fileName, Integer boardId,
+            Integer employerId, Integer toliId) throws IOException {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename != null && uploadedFileRepository.findByFilename(originalFilename).isPresent()) {
             throw new IOException("Duplicate file: a file with the same name already exists.");
@@ -73,6 +82,12 @@ public class FileStorageUtil {
         uploadedFile.setFailureCount(0);
         uploadedFile.setStatus("UPLOADED");
         uploadedFile.setFileReferenceNumber(generateRequestReferenceNumber());
+        if (boardId == null) {
+            throw new IllegalStateException("Board ID is required to store uploaded file with RLS enabled");
+        }
+        uploadedFile.setBoardId(boardId);
+        uploadedFile.setEmployerId(employerId);
+        uploadedFile.setToliId(toliId);
 
         UploadedFile savedFile = uploadedFileRepository.save(uploadedFile);
         log.info("Saved UploadedFile with ID: {}", savedFile.getId());

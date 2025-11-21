@@ -18,13 +18,22 @@ public class WorkerUploadedData {
     private Long id;
 
     @Column(name = "file_id")
-    private String fileId;
+    private Long fileId;
 
     @Column(name = "created_at")
     private java.time.LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
+
+    @Column(name = "board_id")
+    private Long boardId;
+
+    @Column(name = "employer_id")
+    private Long employerId;
+
+    @Column(name = "toli_id")
+    private Long toliId;
 
     @Column(name = "worker_id")
     private Long workerId;
@@ -128,11 +137,11 @@ public class WorkerUploadedData {
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
 
-    public String getFileId() {
+    public Long getFileId() {
         return fileId;
     }
 
-    public void setFileId(String fileId) {
+    public void setFileId(Long fileId) {
         this.fileId = fileId;
     }
 
@@ -150,6 +159,30 @@ public class WorkerUploadedData {
 
     public void setUpdatedAt(java.time.LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getBoardId() {
+        return boardId;
+    }
+
+    public void setBoardId(Long boardId) {
+        this.boardId = boardId;
+    }
+
+    public Long getEmployerId() {
+        return employerId;
+    }
+
+    public void setEmployerId(Long employerId) {
+        this.employerId = employerId;
+    }
+
+    public Long getToliId() {
+        return toliId;
+    }
+
+    public void setToliId(Long toliId) {
+        this.toliId = toliId;
     }
 
     // Getters and setters for all fields

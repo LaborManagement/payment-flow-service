@@ -27,6 +27,7 @@ import com.example.paymentflow.utilities.file.UploadedFile;
 import com.example.paymentflow.utilities.file.UploadedFileRepository;
 import com.example.paymentflow.worker.entity.WorkerPayment;
 import com.example.paymentflow.worker.entity.WorkerPaymentReceipt;
+import com.shared.common.dao.TenantAccessDao;
 import com.shared.utilities.logger.LoggerFactoryProvider;
 
 @Service
@@ -48,23 +49,39 @@ public class WorkerPaymentFileService {
     @Autowired
     private WorkerUploadedDataService workerUploadedDataService;
 
+    @Autowired
+    private TenantAccessDao tenantAccessDao;
+
+    private TenantAccessDao.TenantAccess requireTenantAccess() {
+        TenantAccessDao.TenantAccess tenantAccess = tenantAccessDao.getFirstAccessibleTenant();
+        if (tenantAccess == null || tenantAccess.boardId == null) {
+            throw new IllegalStateException("User has no tenant access assigned for uploads");
+        }
+        return tenantAccess;
+    }
+
     public Map<String, Object> handleFileUpload(MultipartFile file) {
         log.info("Received file upload: name={}, size={} bytes", file.getOriginalFilename(), file.getSize());
 
         try {
+            TenantAccessDao.TenantAccess tenantAccess = requireTenantAccess();
             String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Long boardId = tenantAccess.boardId != null ? tenantAccess.boardId.longValue() : null;
+            Long employerId = tenantAccess.employerId != null ? tenantAccess.employerId.longValue() : null;
+            Long toliId = tenantAccess.toliId != null ? tenantAccess.toliId.longValue() : null;
 
             // Use the new method that returns the entity directly to avoid lookup issues
-            UploadedFile uploadedFile = fileStorageUtil.storeFileAndReturnEntity(file, "workerpayments", fileName);
+            UploadedFile uploadedFile = fileStorageUtil.storeFileAndReturnEntity(file, "workerpayments", fileName,
+                    tenantAccess.boardId, tenantAccess.employerId, tenantAccess.toliId);
             String storedPath = uploadedFile.getStoredPath();
-            String fileId = uploadedFile.getId().toString();
+            Long fileId = uploadedFile.getId();
 
             log.info("File saved to {} with fileId: {}", storedPath, fileId);
 
             // Parse the file and extract worker uploaded data
             File fileToRead = new File(storedPath);
             List<com.example.paymentflow.worker.entity.WorkerUploadedData> uploadedDataList = parseFileToUploadedData(
-                    fileToRead, file.getOriginalFilename(), fileId);
+                    fileToRead, file.getOriginalFilename(), fileId, boardId, employerId, toliId);
 
             // Update the uploaded file record with parsing results
             uploadedFile.setTotalRecords(uploadedDataList.size());
@@ -364,7 +381,7 @@ public class WorkerPaymentFileService {
         }
     }
 
-    public Map<String, Object> processValidRecords(String fileId) {
+    public Map<String, Object> processValidRecords(Long fileId) {
         log.info("Processing valid records for fileId={}", fileId);
 
         try {
@@ -453,7 +470,7 @@ public class WorkerPaymentFileService {
         }
     }
 
-    public Map<String, Object> getFileStatusSummary(String fileId) {
+    public Map<String, Object> getFileStatusSummary(Long fileId) {
         log.info("Getting status summary for fileId={}", fileId);
 
         try {
@@ -542,27 +559,28 @@ public class WorkerPaymentFileService {
     }
 
     // Debug method to get worker payments by fileId
-    public List<WorkerPayment> getWorkerPaymentsByFileId(String fileId) {
+    public List<WorkerPayment> getWorkerPaymentsByFileId(Long fileId) {
         return workerPaymentService.findByFileId(fileId);
     }
 
     private List<com.example.paymentflow.worker.entity.WorkerUploadedData> parseFileToUploadedData(
-            File file, String originalFilename, String fileId) throws java.io.IOException {
+            File file, String originalFilename, Long fileId, Long boardId, Long employerId, Long toliId)
+            throws java.io.IOException {
         log.info("Parsing file {} to WorkerUploadedData format", originalFilename);
 
         String extension = getFileExtension(originalFilename);
         if ("csv".equalsIgnoreCase(extension)) {
-            return parseCsvToUploadedData(file, fileId);
+            return parseCsvToUploadedData(file, fileId, boardId, employerId, toliId);
         }
         if ("xls".equalsIgnoreCase(extension) || "xlsx".equalsIgnoreCase(extension)) {
-            return parseExcelToUploadedData(file, fileId);
+            return parseExcelToUploadedData(file, fileId, boardId, employerId, toliId);
         }
 
         throw new java.io.IOException("Unsupported file type: " + extension);
     }
 
     private List<com.example.paymentflow.worker.entity.WorkerUploadedData> parseCsvToUploadedData(
-            File file, String fileId) throws java.io.IOException {
+            File file, Long fileId, Long boardId, Long employerId, Long toliId) throws java.io.IOException {
         List<com.example.paymentflow.worker.entity.WorkerUploadedData> uploadedDataList = new ArrayList<>();
 
         try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(file))) {
@@ -580,7 +598,7 @@ public class WorkerPaymentFileService {
 
                 try {
                     com.example.paymentflow.worker.entity.WorkerUploadedData uploadedData = parseCSVLineToUploadedData(
-                            line, fileId, rowNumber++);
+                            line, fileId, rowNumber++, boardId, employerId, toliId);
                     uploadedDataList.add(uploadedData);
                 } catch (Exception e) {
                     log.error("Error parsing CSV line {}: {}", rowNumber, e.getMessage());
@@ -593,7 +611,7 @@ public class WorkerPaymentFileService {
     }
 
     private List<com.example.paymentflow.worker.entity.WorkerUploadedData> parseExcelToUploadedData(
-            File file, String fileId) throws java.io.IOException {
+            File file, Long fileId, Long boardId, Long employerId, Long toliId) throws java.io.IOException {
         List<com.example.paymentflow.worker.entity.WorkerUploadedData> uploadedDataList = new ArrayList<>();
         DataFormatter formatter = new DataFormatter();
 
@@ -621,7 +639,7 @@ public class WorkerPaymentFileService {
 
                 try {
                     com.example.paymentflow.worker.entity.WorkerUploadedData uploadedData = populateUploadedDataFromFields(
-                            fields, fileId, rowNumber++);
+                            fields, fileId, rowNumber++, boardId, employerId, toliId);
                     uploadedDataList.add(uploadedData);
                 } catch (Exception e) {
                     log.error("Error parsing Excel row {}: {}", rowNumber, e.getMessage());
@@ -636,9 +654,9 @@ public class WorkerPaymentFileService {
     }
 
     private com.example.paymentflow.worker.entity.WorkerUploadedData parseCSVLineToUploadedData(
-            String csvLine, String fileId, int rowNumber) {
+            String csvLine, Long fileId, int rowNumber, Long boardId, Long employerId, Long toliId) {
         String[] fields = csvLine.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-        return populateUploadedDataFromFields(fields, fileId, rowNumber);
+        return populateUploadedDataFromFields(fields, fileId, rowNumber, boardId, employerId, toliId);
     }
 
     private String cleanField(String field) {
@@ -684,8 +702,16 @@ public class WorkerPaymentFileService {
     }
 
     private com.example.paymentflow.worker.entity.WorkerUploadedData populateUploadedDataFromFields(
-            String[] rawFields, String fileId, int rowNumber) {
+            String[] rawFields, Long fileId, int rowNumber, Long boardId, Long employerId, Long toliId) {
         com.example.paymentflow.worker.entity.WorkerUploadedData uploadedData = new com.example.paymentflow.worker.entity.WorkerUploadedData();
+        uploadedData.setFileId(fileId);
+        uploadedData.setBoardId(boardId);
+        uploadedData.setEmployerId(employerId);
+        uploadedData.setToliId(toliId);
+        uploadedData.setStatus("UPLOADED");
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        uploadedData.setCreatedAt(now);
+        uploadedData.setUpdatedAt(now);
 
         // Defensive: check for null or insufficient fields
         if (rawFields == null || rawFields.length < 44) {

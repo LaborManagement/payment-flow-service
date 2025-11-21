@@ -45,6 +45,14 @@ public class WorkerUploadedDataService {
         this.repository = repository;
     }
 
+    private Long parseFileId(String fileId) {
+        try {
+            return Long.valueOf(fileId);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid fileId, expected numeric value", e);
+        }
+    }
+
     public WorkerUploadedData save(WorkerUploadedData uploadedData) {
         log.debug("Saving worker uploaded data for workerId: {}",
                 uploadedData.getWorkerId());
@@ -58,28 +66,28 @@ public class WorkerUploadedDataService {
 
     public List<WorkerUploadedData> findByFileId(String fileId) {
         log.info("Finding worker uploaded data for fileId: {}", fileId);
-        return repository.findByFileId(fileId);
+        return repository.findByFileId(parseFileId(fileId));
     }
 
     public List<WorkerUploadedData> findByFileIdAndStatus(String fileId, String status) {
         log.info("Finding worker uploaded data for fileId: {} with status: {}", fileId, status);
-        return repository.findByFileIdAndStatus(fileId, status);
+        return repository.findByFileIdAndStatus(parseFileId(fileId), status);
     }
 
     public Page<WorkerUploadedData> findByFileIdAndStatusPaginated(String fileId, String status, Pageable pageable) {
         log.info("Finding worker uploaded data for fileId: {} with status: {} (paginated)", fileId, status);
-        return repository.findByFileIdAndStatus(fileId, status, pageable);
+        return repository.findByFileIdAndStatus(parseFileId(fileId), status, pageable);
     }
 
     public Page<WorkerUploadedData> findByFileIdPaginated(String fileId, Pageable pageable) {
         log.info("Finding worker uploaded data for fileId: {} (paginated)", fileId);
-        return repository.findByFileId(fileId, pageable);
+        return repository.findByFileId(parseFileId(fileId), pageable);
     }
 
     public Map<String, Integer> getFileStatusSummary(String fileId) {
         log.info("Getting status summary for fileId: {}", fileId);
 
-        List<Object[]> statusCounts = repository.getStatusCountsByFileId(fileId);
+        List<Object[]> statusCounts = repository.getStatusCountsByFileId(parseFileId(fileId));
         Map<String, Integer> summary = new HashMap<>();
 
         // Initialize with common statuses
@@ -155,7 +163,8 @@ public class WorkerUploadedDataService {
             Map<String, Integer> statusSummary = getFileStatusSummary(fileId);
 
             // Calculate validated count and total amount for validated records
-            List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(fileId, "VALIDATED");
+            List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(parseFileId(fileId),
+                    "VALIDATED");
             int validatedCount = validatedRecords.size();
 
             BigDecimal totalValidatedAmount = validatedRecords.stream()
@@ -206,23 +215,23 @@ public class WorkerUploadedDataService {
 
         try {
             // Get distinct file IDs from worker_uploaded_data table with filters
-            List<String> distinctFileIds = repository.findDistinctFileIds();
+            List<Long> distinctFileIds = repository.findDistinctFileIds();
 
             // Apply fileId filter if provided
             if (fileId != null && !fileId.trim().isEmpty()) {
+                Long filterId = parseFileId(fileId.trim());
                 distinctFileIds = distinctFileIds.stream()
-                        .filter(id -> id.equals(fileId.trim()))
+                        .filter(id -> id.equals(filterId))
                         .collect(java.util.stream.Collectors.toList());
             }
 
             // Build summary for each file and apply filters
             java.util.List<Map<String, Object>> allFileSummaries = new java.util.ArrayList<>();
 
-            for (String currentFileId : distinctFileIds) {
+            for (Long currentFileId : distinctFileIds) {
                 try {
                     // Get file metadata from uploaded_files table
-                    Long uploadedFileId = Long.parseLong(currentFileId);
-                    Optional<UploadedFile> uploadedFileOpt = uploadedFileRepository.findById(uploadedFileId);
+                    Optional<UploadedFile> uploadedFileOpt = uploadedFileRepository.findById(currentFileId);
 
                     if (uploadedFileOpt.isEmpty()) {
                         log.warn("File metadata not found for fileId: {}", currentFileId);
@@ -242,7 +251,7 @@ public class WorkerUploadedDataService {
                     }
 
                     // Get aggregated data from worker_uploaded_data
-                    Map<String, Integer> statusSummary = getFileStatusSummary(currentFileId);
+                    Map<String, Integer> statusSummary = getFileStatusSummary(currentFileId.toString());
                     int totalRecords = statusSummary.values().stream().mapToInt(Integer::intValue).sum();
 
                     // Skip if no records found
@@ -273,7 +282,7 @@ public class WorkerUploadedDataService {
 
                     // Build file summary
                     Map<String, Object> fileSummary = new HashMap<>();
-                    fileSummary.put("fileId", currentFileId);
+                    fileSummary.put("fileId", currentFileId.toString());
                     fileSummary.put("fileName", file.getFilename());
                     fileSummary.put("uploadDate", file.getUploadDate());
                     fileSummary.put("totalRecords", totalRecords);
@@ -349,7 +358,7 @@ public class WorkerUploadedDataService {
     public void validateUploadedData(String fileId) {
         log.info("Starting validation for fileId: {}", fileId);
 
-        List<WorkerUploadedData> uploadedRecords = repository.findByFileIdAndStatus(fileId, "UPLOADED");
+        List<WorkerUploadedData> uploadedRecords = repository.findByFileIdAndStatus(parseFileId(fileId), "UPLOADED");
         log.info("Found {} uploaded records to validate", uploadedRecords.size());
 
         for (WorkerUploadedData record : uploadedRecords) {
@@ -406,7 +415,7 @@ public class WorkerUploadedDataService {
     public int generateRequestForValidatedData(String fileId, String uploadedFileRef) {
         log.info("Generating request for validated data in fileId: {}", fileId);
 
-        List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(fileId, "VALIDATED");
+        List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(parseFileId(fileId), "VALIDATED");
         log.info("Found {} validated records to process", validatedRecords.size());
 
         if (validatedRecords.isEmpty()) {
@@ -485,17 +494,17 @@ public class WorkerUploadedDataService {
 
     public void deleteByFileId(String fileId) {
         log.info("Deleting all uploaded data for fileId: {}", fileId);
-        repository.deleteByFileId(fileId);
+        repository.deleteByFileId(parseFileId(fileId));
     }
 
     public List<WorkerUploadedData> findRejectedRecords(String fileId) {
         log.info("Finding rejected records for fileId: {}", fileId);
-        return repository.findByFileIdAndStatus(fileId, "REJECTED");
+        return repository.findByFileIdAndStatus(parseFileId(fileId), "REJECTED");
     }
 
     public List<WorkerUploadedData> findRequestGeneratedRecords(String fileId) {
         log.info("Finding request generated records for fileId: {}", fileId);
-        return repository.findByFileIdAndStatus(fileId, "REQUEST_GENERATED");
+        return repository.findByFileIdAndStatus(parseFileId(fileId), "REQUEST_GENERATED");
     }
 
     // Find all by createdAt between (paginated)

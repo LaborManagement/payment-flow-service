@@ -1,23 +1,26 @@
 package com.example.paymentflow.worker.service;
 
-import com.example.paymentflow.worker.entity.WorkerPayment;
-import com.example.paymentflow.worker.repository.WorkerPaymentRepository;
-import com.example.paymentflow.worker.dao.WorkerPaymentQueryDao;
-import com.shared.common.dao.BaseQueryDao.PageResult;
-import com.shared.exception.ResourceNotFoundException; // Uncomment if exists
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.paymentflow.worker.dao.WorkerPaymentQueryDao;
+import com.example.paymentflow.worker.entity.WorkerPayment;
+import com.example.paymentflow.worker.repository.WorkerPaymentRepository;
+import com.shared.common.dao.BaseQueryDao.PageResult;
+import com.shared.exception.ResourceNotFoundException; // Uncomment if exists
+
 /**
- * Enhanced Worker Payment Service using query-based approach for reads and JPA for writes.
- * This provides better control over read queries and easier debugging while maintaining 
+ * Enhanced Worker Payment Service using query-based approach for reads and JPA
+ * for writes.
+ * This provides better control over read queries and easier debugging while
+ * maintaining
  * JPA benefits for write operations and data consistency.
  */
 @Service
@@ -28,12 +31,12 @@ public class EnhancedWorkerPaymentService {
 
     // JPA Repository for write operations (Create, Update, Delete)
     private final WorkerPaymentRepository writeRepository;
-    
-    // Query DAO for all read operations 
+
+    // Query DAO for all read operations
     private final WorkerPaymentQueryDao readDao;
 
-    public EnhancedWorkerPaymentService(WorkerPaymentRepository writeRepository, 
-                                       WorkerPaymentQueryDao readDao) {
+    public EnhancedWorkerPaymentService(WorkerPaymentRepository writeRepository,
+            WorkerPaymentQueryDao readDao) {
         this.writeRepository = writeRepository;
         this.readDao = readDao;
     }
@@ -67,13 +70,13 @@ public class EnhancedWorkerPaymentService {
      */
     public WorkerPayment update(Long id, WorkerPayment updated) {
         log.info("Updating worker payment with id={}", id);
-        
+
         // First check if exists using read DAO
         Optional<WorkerPayment> existing = readDao.findById(id);
         if (existing.isEmpty()) {
             throw new ResourceNotFoundException("Worker payment not found with id: " + id);
         }
-        
+
         // Update using JPA
         updated.setCreatedAt(existing.get().getCreatedAt()); // Preserve creation time
         WorkerPayment saved = writeRepository.save(updated);
@@ -96,12 +99,12 @@ public class EnhancedWorkerPaymentService {
      */
     public WorkerPayment updateStatus(Long id, String newStatus) {
         log.info("Updating status of worker payment id={} to status={}", id, newStatus);
-        
+
         Optional<WorkerPayment> existing = readDao.findById(id);
         if (existing.isEmpty()) {
             throw new ResourceNotFoundException("Worker payment not found with id: " + id);
         }
-        
+
         WorkerPayment payment = existing.get();
         payment.setStatus(newStatus);
         return writeRepository.save(payment);
@@ -112,11 +115,11 @@ public class EnhancedWorkerPaymentService {
      */
     public void delete(Long id) {
         log.info("Deleting worker payment with id={}", id);
-        
+
         if (readDao.findById(id).isEmpty()) {
             throw new ResourceNotFoundException("Worker payment not found with id: " + id);
         }
-        
+
         writeRepository.deleteById(id);
         log.info("Deleted worker payment with id={}", id);
     }
@@ -139,8 +142,7 @@ public class EnhancedWorkerPaymentService {
      */
     @Transactional(readOnly = true)
     public WorkerPayment getById(Long id) {
-        return findById(id).orElseThrow(() -> 
-            new ResourceNotFoundException("Worker payment not found with id: " + id));
+        return findById(id).orElseThrow(() -> new ResourceNotFoundException("Worker payment not found with id: " + id));
     }
 
     /**
@@ -148,13 +150,13 @@ public class EnhancedWorkerPaymentService {
      * All filtering logic is contained in the service layer for easier debugging
      */
     @Transactional(readOnly = true)
-    public PageResult<WorkerPayment> findWithFilters(String status, String receiptNumber, 
-                                                    String fileId, LocalDateTime startDate, 
-                                                    LocalDateTime endDate, int page, int size) {
+    public PageResult<WorkerPayment> findWithFilters(String status, String receiptNumber,
+            String fileId, LocalDateTime startDate,
+            LocalDateTime endDate, int page, int size) {
         log.info("Finding worker payments with filters - status={}, receiptNumber={}, fileId={}, " +
-                "startDate={}, endDate={}, page={}, size={}", 
+                "startDate={}, endDate={}, page={}, size={}",
                 status, receiptNumber, fileId, startDate, endDate, page, size);
-        
+
         return readDao.findWithFilters(status, receiptNumber, fileId, startDate, endDate, page, size);
     }
 
@@ -180,7 +182,7 @@ public class EnhancedWorkerPaymentService {
      * Find by file ID with pagination using custom query
      */
     @Transactional(readOnly = true)
-    public PageResult<WorkerPayment> findByFileId(String fileId, int page, int size) {
+    public PageResult<WorkerPayment> findByFileId(Long fileId, int page, int size) {
         log.debug("Finding worker payments by fileId={}, page={}, size={}", fileId, page, size);
         return readDao.findByFileId(fileId, page, size);
     }
@@ -198,9 +200,9 @@ public class EnhancedWorkerPaymentService {
      * Find by date range with pagination using custom query
      */
     @Transactional(readOnly = true)
-    public PageResult<WorkerPayment> findByDateRange(LocalDateTime startDate, LocalDateTime endDate, 
-                                                    int page, int size) {
-        log.debug("Finding worker payments by date range from {} to {}, page={}, size={}", 
+    public PageResult<WorkerPayment> findByDateRange(LocalDateTime startDate, LocalDateTime endDate,
+            int page, int size) {
+        log.debug("Finding worker payments by date range from {} to {}, page={}, size={}",
                 startDate, endDate, page, size);
         return readDao.findByDateRange(startDate, endDate, page, size);
     }
@@ -239,11 +241,11 @@ public class EnhancedWorkerPaymentService {
      * Get total count with filters - useful for pagination
      */
     @Transactional(readOnly = true)
-    public long countWithFilters(String status, String receiptNumber, String fileId, 
-                                LocalDateTime startDate, LocalDateTime endDate) {
+    public long countWithFilters(String status, String receiptNumber, String fileId,
+            LocalDateTime startDate, LocalDateTime endDate) {
         // This would call a count query in the DAO
-        PageResult<WorkerPayment> result = readDao.findWithFilters(status, receiptNumber, fileId, 
-                                                                  startDate, endDate, 0, 1);
+        PageResult<WorkerPayment> result = readDao.findWithFilters(status, receiptNumber, fileId,
+                startDate, endDate, 0, 1);
         return result.getTotalElements();
     }
 }

@@ -15,36 +15,36 @@ public interface WorkerUploadedDataRepository extends JpaRepository<WorkerUpload
     // Find by createdAt between (paginated)
     // (kept only one definition below)
     // READ operations - to be moved to WorkerUploadedDataQueryDao in future
-    List<WorkerUploadedData> findByFileId(String fileId);
+    List<WorkerUploadedData> findByFileId(Long fileId);
 
-    List<WorkerUploadedData> findByFileIdAndStatus(String fileId, String status);
+    List<WorkerUploadedData> findByFileIdAndStatus(Long fileId, String status);
 
-    Page<WorkerUploadedData> findByFileIdAndStatus(String fileId, String status, Pageable pageable);
+    Page<WorkerUploadedData> findByFileIdAndStatus(Long fileId, String status, Pageable pageable);
 
-    Page<WorkerUploadedData> findByFileId(String fileId, Pageable pageable);
+    Page<WorkerUploadedData> findByFileId(Long fileId, Pageable pageable);
 
     List<WorkerUploadedData> findByStatus(String status);
 
     Page<WorkerUploadedData> findByStatus(String status, Pageable pageable);
 
     @Query("SELECT COUNT(w) FROM WorkerUploadedData w WHERE w.fileId = :fileId AND w.status = :status")
-    long countByFileIdAndStatus(@Param("fileId") String fileId, @Param("status") String status);
+    long countByFileIdAndStatus(@Param("fileId") Long fileId, @Param("status") String status);
 
     @Query("SELECT w.status, COUNT(w) FROM WorkerUploadedData w WHERE w.fileId = :fileId GROUP BY w.status")
-    List<Object[]> getStatusCountsByFileId(@Param("fileId") String fileId);
+    List<Object[]> getStatusCountsByFileId(@Param("fileId") Long fileId);
 
     @Query("SELECT DISTINCT w.fileId FROM WorkerUploadedData w ORDER BY w.fileId")
-    List<String> findDistinctFileIds();
+    List<Long> findDistinctFileIds();
 
-    Page<WorkerUploadedData> findByFileIdAndStatusAndCreatedAtBetween(String fileId, String status,
+    Page<WorkerUploadedData> findByFileIdAndStatusAndCreatedAtBetween(Long fileId, String status,
             java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, Pageable pageable);
 
-    Page<WorkerUploadedData> findByFileIdAndCreatedAtBetween(String fileId, java.time.LocalDateTime startDate,
+    Page<WorkerUploadedData> findByFileIdAndCreatedAtBetween(Long fileId, java.time.LocalDateTime startDate,
             java.time.LocalDateTime endDate, Pageable pageable);
 
     Page<WorkerUploadedData> findByCreatedAtBetween(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate,
             Pageable pageable);
 
     // WRITE operations
-    void deleteByFileId(String fileId);
+    void deleteByFileId(Long fileId);
 }
