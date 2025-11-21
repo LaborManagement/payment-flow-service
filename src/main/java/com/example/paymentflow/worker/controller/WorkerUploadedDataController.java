@@ -63,7 +63,7 @@ public class WorkerUploadedDataController {
     @PostMapping("/secure-paginated")
     @Operation(summary = "Get secure paginated uploaded data", description = "Retrieve paginated uploaded data with MANDATORY date range filtering for security. "
             +
-            "Prevents unrestricted data access and implements tamper-proof pagination tokens.")
+            "Prevents unrestricted data access and implements tamper-proof pagination tokens. Supports optional fileId filter.")
     @SecurePagination
     @UiType(value = UiTypes.LIST, usage = "Display paginated list of uploaded data with sorting and filtering")
     public ResponseEntity<?> getSecurePaginatedUploadedData(
@@ -87,9 +87,14 @@ public class WorkerUploadedDataController {
             Sort sort = SecurePaginationUtil.createSecureSort(request, allowedSortFields);
             Pageable pageable = PageRequest.of(
                     request.getPage(), Math.min(request.getSize(), 100), sort);
-            // Get paginated data with date filtering
-            Page<WorkerUploadedData> dataPage = service.findByDateRangePaginated(validation.getStartDateTime(),
-                    validation.getEndDateTime(), pageable);
+            Page<WorkerUploadedData> dataPage;
+            if (request.getFileId() != null && !request.getFileId().isBlank()) {
+                dataPage = service.findByFileIdAndDateRangePaginated(request.getFileId(),
+                        validation.getStartDateTime(), validation.getEndDateTime(), pageable);
+            } else {
+                dataPage = service.findByDateRangePaginated(validation.getStartDateTime(),
+                        validation.getEndDateTime(), pageable);
+            }
             // Create secure response with opaque tokens
             SecurePaginationResponse<WorkerUploadedData> response = SecurePaginationUtil.createSecureResponse(dataPage,
                     request);
@@ -188,7 +193,7 @@ public class WorkerUploadedDataController {
 
             // Use service to get paginated file summaries using standard pagination
             Map<String, Object> paginatedSummaries = service.getPaginatedFileSummaries(
-                    page, size, null, status, startDate, endDate, sortBy, sortDir);
+                    page, size, request.getFileId(), status, startDate, endDate, sortBy, sortDir);
             return ResponseEntity.ok(paginatedSummaries);
         } catch (Exception e) {
             log.error("Error in secure paginated file summaries retrieval", e);

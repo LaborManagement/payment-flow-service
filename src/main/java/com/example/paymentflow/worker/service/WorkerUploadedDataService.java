@@ -98,7 +98,7 @@ public class WorkerUploadedDataService {
 
         // Populate with actual counts
         for (Object[] result : statusCounts) {
-            String status = (String) result[0];
+            String status = result[0] != null ? (String) result[0] : "UNKNOWN";
             Long count = (Long) result[1];
             summary.put(status, count.intValue());
         }
@@ -505,6 +505,13 @@ public class WorkerUploadedDataService {
     public List<WorkerUploadedData> findRequestGeneratedRecords(String fileId) {
         log.info("Finding request generated records for fileId: {}", fileId);
         return repository.findByFileIdAndStatus(parseFileId(fileId), "REQUEST_GENERATED");
+    }
+
+    public Page<WorkerUploadedData> findByFileIdAndDateRangePaginated(String fileId,
+            java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, Pageable pageable) {
+        log.info("Finding records by fileId: {} and date range: {} to {} (paginated)", fileId, startDate, endDate);
+        Long parsedFileId = parseFileId(fileId);
+        return repository.findByFileIdAndCreatedAtBetween(parsedFileId, startDate, endDate, pageable);
     }
 
     // Find all by createdAt between (paginated)
