@@ -100,9 +100,8 @@ public class WorkerPaymentFileService {
             log.info("File {} parsed and {} records saved to WorkerUploadedData (fileId={})",
                     file.getOriginalFilename(), savedData.size(), fileId);
 
-            // Run DB-side validation and payments
+            // Run DB-side validation only (request creation is triggered separately)
             DbProcedureExecutor.ValidationOutcome validationOutcome = null;
-            String receiptNumber = null;
             String procError = null;
             try {
                 validationOutcome = dbProcedureExecutor.validateUploadedData(fileId);
@@ -110,12 +109,6 @@ public class WorkerPaymentFileService {
                 uploadedFile.setFailureCount(validationOutcome.invalidCount);
                 uploadedFile.setStatus(validationOutcome.allValid ? "VALIDATED" : "VALIDATION_FAILED");
                 uploadedFileRepository.save(uploadedFile);
-
-                if (validationOutcome.allValid && validationOutcome.validCount > 0) {
-                    receiptNumber = dbProcedureExecutor.createPayments(fileId);
-                    uploadedFile.setStatus("REQUEST_GENERATED");
-                    uploadedFileRepository.save(uploadedFile);
-                }
             } catch (Exception procEx) {
                 log.error("Proc execution failed for fileId={}", fileId, procEx);
                 procError = procEx.getMessage();
@@ -136,10 +129,10 @@ public class WorkerPaymentFileService {
                         "valid", validationOutcome.validCount,
                         "invalid", validationOutcome.invalidCount,
                         "raw", validationOutcome.rawJson));
-            }
-            if (receiptNumber != null) {
-                response.put("receiptNumber", receiptNumber);
-                response.put("status", "REQUEST_GENERATED");
+                response.put("status", uploadedFile.getStatus());
+                if (validationOutcome.allValid && validationOutcome.validCount > 0) {
+                    response.put("nextAction", "GENERATE_REQUEST");
+                }
             } else {
                 response.put("status", uploadedFile.getStatus());
             }
@@ -385,29 +378,44 @@ public class WorkerPaymentFileService {
             }
 
             UploadedFile uploadedFile = uploadedFileOpt.get();
-            String uploadedFileRef = uploadedFile.getFileReferenceNumber();
 
-            // Generate request for validated data (keep data in WorkerUploadedData with
-            // receipt number)
-            int processedCount = workerUploadedDataService.generateRequestForValidatedData(fileId, uploadedFileRef);
-
-            if (processedCount == 0) {
-                return Map.of("error", "No validated records found to generate request");
+            if ("REQUEST_GENERATED".equalsIgnoreCase(uploadedFile.getStatus())) {
+                return Map.of(
+                        "message", "Request already generated for this file",
+                        "fileId", fileId,
+                        "status", uploadedFile.getStatus());
             }
 
-            // Update the uploaded file status
+            String fileStatus = uploadedFile.getStatus();
+            if (!"VALIDATED".equalsIgnoreCase(fileStatus) && !"COMPLETED".equalsIgnoreCase(fileStatus)) {
+                return Map.of(
+                        "error", "File is not validated. Please complete validation before generating request.",
+                        "status", fileStatus,
+                        "nextAction", "VALIDATE");
+            }
+
+            Integer successCount = uploadedFile.getSuccessCount();
+            if (successCount == null || successCount == 0) {
+                return Map.of(
+                        "error", "No validated records available to generate request",
+                        "status", fileStatus,
+                        "nextAction", "VALIDATE");
+            }
+
+            String receiptNumber = dbProcedureExecutor.createPayments(uploadedFileId);
+
             uploadedFile.setStatus("REQUEST_GENERATED");
             uploadedFileRepository.save(uploadedFile);
 
-            log.info("Request generated successfully for fileId={}: {} records processed with receipt numbers", fileId,
-                    processedCount);
+            log.info("Request generated successfully for fileId={} with receipt {}", fileId, receiptNumber);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Request generated successfully");
             response.put("fileId", fileId);
-            response.put("requestReference", uploadedFileRef);
-            response.put("processedRecords", processedCount);
-            response.put("status", "REQUEST_GENERATED");
+            response.put("receiptNumber", receiptNumber);
+            response.put("status", uploadedFile.getStatus());
+            response.put("processedRecords", successCount);
+            response.put("summary", workerUploadedDataService.getFileStatusSummary(fileId));
             response.put("nextAction", "VIEW_REQUESTS");
 
             return response;

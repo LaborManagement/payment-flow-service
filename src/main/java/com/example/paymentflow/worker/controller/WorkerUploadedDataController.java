@@ -270,23 +270,16 @@ public class WorkerUploadedDataController {
     public ResponseEntity<?> generateRequestForValidatedData(
             @Parameter(description = "File ID") @PathVariable String fileId,
             @RequestBody(required = false) ProcessRequest request) {
-        log.info("Generating request for validated data in fileId: {}", fileId);
+        log.info("Generating request (DB create_payments) for fileId: {}", fileId);
 
         try {
-            String uploadedFileRef = request != null && request.getUploadedFileRef() != null
-                    ? request.getUploadedFileRef()
-                    : fileId;
+            Map<String, Object> result = fileService.generateRequest(fileId);
 
-            int processedCount = service.generateRequestForValidatedData(fileId, uploadedFileRef);
+            if (result.containsKey("error")) {
+                return ResponseEntity.badRequest().body(result);
+            }
 
-            // Get updated summary
-            Map<String, Integer> summary = service.getFileStatusSummary(fileId);
-
-            return ResponseEntity.ok(Map.of(
-                    "message", "Request generated successfully",
-                    "fileId", fileId,
-                    "processedRecords", processedCount,
-                    "summary", summary));
+            return ResponseEntity.ok(result);
 
         } catch (Exception e) {
             log.error("Error generating request for validated data in fileId: {}", fileId, e);
