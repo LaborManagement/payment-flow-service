@@ -1,3 +1,3 @@
-worker_id,employee_name,employer_id,toli_no,board_id,month,day1,day2,day3,day4,day5,day6,day7,day8,day9,day10,day11,day12,day13,day14,day15,day16,day17,day18,day19,day20,day21,day22,day23,day24,day25,day26,day27,day28,day29,day30,day31,total_days,amount,advance,net_payable,payment_type,txn_ref,status,rejection_reason
-4,Alice Worker,1,1,1,2025-01,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,22,2200.00,200.00,2000.00,BANK_TRANSFER,TXN-202501-001,UPLOADED,
-5,Bob Builder,1,1,1,2025-01,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,1500.00,0.00,1500.00,CASH,TXN-202501-002,UPLOADED,
+worker_regno,employee_name,employer_reg_no,toli_reg_no,year_month,day1,day2,day3,day4,day5,day6,day7,day8,day9,day10,day11,day12,day13,day14,day15,day16,day17,day18,day19,day20,day21,day22,day23,day24,day25,day26,day27,day28,day29,day30,day31,total_days,amount,advance,net_payable,payment_type,txn_ref
+WRK-0001,Alice Worker,EMP-0001,TOLI-001,2025-01,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,22,2200.00,200.00,2000.00,BANK_TRANSFER,TXN-202501-001
+WRK-0002,Bob Builder,EMP-0002,TOLI-002,2025-01,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,1500.00,0.00,1500.00,CASH,TXN-202501-002

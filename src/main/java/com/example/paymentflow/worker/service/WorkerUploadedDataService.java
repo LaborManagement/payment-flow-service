@@ -53,8 +53,8 @@ public class WorkerUploadedDataService {
     }
 
     public WorkerUploadedData save(WorkerUploadedData uploadedData) {
-        log.debug("Saving worker uploaded data for workerId: {}",
-                uploadedData.getWorkerId());
+        log.debug("Saving worker uploaded data for workerRegno: {}",
+                uploadedData.getWorkerRegno());
         return repository.save(uploadedData);
     }
 
@@ -328,7 +328,8 @@ public class WorkerUploadedDataService {
                 validateRecord(record);
                 // No validatedAt field in entity, skip setting it
             } catch (Exception e) {
-                log.error("Error validating record for workerId {} in fileId: {}", record.getWorkerId(), fileId, e);
+                log.error("Error validating record for workerRegno {} in fileId: {}", record.getWorkerRegno(), fileId,
+                        e);
                 record.setRejectionReason("Validation error: " + e.getMessage());
             }
         }
@@ -341,8 +342,8 @@ public class WorkerUploadedDataService {
         StringBuilder errors = new StringBuilder();
 
         // Required field validations
-        if (record.getWorkerId() == null) {
-            errors.append("Worker ID is required. ");
+        if (record.getWorkerRegno() == null || record.getWorkerRegno().trim().isEmpty()) {
+            errors.append("Worker registration number is required. ");
         }
         if (record.getEmployeeName() == null || record.getEmployeeName().trim().isEmpty()) {
             errors.append("Employee name is required. ");
@@ -388,7 +389,7 @@ public class WorkerUploadedDataService {
                 WorkerPayment payment = convertUploadedDataToPayment(uploadedData);
                 WorkerPayment savedPayment = workerPaymentService.save(payment);
                 workerPayments.add(savedPayment);
-                log.debug("Created WorkerPayment record for worker: {}", uploadedData.getWorkerId());
+                log.debug("Created WorkerPayment record for worker: {}", uploadedData.getWorkerRegno());
             }
 
             // Step 2: Create WorkerPaymentReceipt using the receipt service
@@ -434,7 +435,7 @@ public class WorkerUploadedDataService {
         WorkerPayment payment = new WorkerPayment();
 
         // Map fields from WorkerUploadedData to WorkerPayment based on available fields
-        payment.setWorkerId(uploadedData.getWorkerId());
+        // No worker_id in uploaded data; keep workerId unset until mapped elsewhere
         payment.setEmployerId(uploadedData.getEmployerId());
         payment.setToliId(uploadedData.getToliId());
         payment.setBoardId(uploadedData.getBoardId());

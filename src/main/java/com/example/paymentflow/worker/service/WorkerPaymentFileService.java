@@ -232,7 +232,7 @@ public class WorkerPaymentFileService {
             com.example.paymentflow.worker.entity.WorkerUploadedData data) {
         Map<String, Object> summary = new HashMap<>();
         summary.put("id", data.getId());
-        summary.put("workerId", data.getWorkerId());
+        summary.put("workerRegno", data.getWorkerRegno());
         summary.put("employeeName", data.getEmployeeName());
         summary.put("EmployerRegNo", data.getEmployerRegNo());
         summary.put("ToliRegNo", data.getToliRegNo());
@@ -759,15 +759,15 @@ public class WorkerPaymentFileService {
         uploadedData.setUpdatedAt(now);
 
         // Defensive: check for null or insufficient fields
-        if (rawFields == null || rawFields.length < 44) {
-            log.error("Row {}: insufficient columns for new worker_uploaded_data schema (expected >=44, got {})",
+        if (rawFields == null || rawFields.length < 42) {
+            log.error("Row {}: insufficient columns for worker_uploaded_data schema (expected >=42, got {})",
                     rowNumber, (rawFields == null ? 0 : rawFields.length));
             return uploadedData;
         }
 
         try {
             // Map all columns by index (assuming strict order as per new schema)
-            uploadedData.setWorkerId(parseLongField(rawFields[0]));
+            uploadedData.setWorkerRegno(cleanField(rawFields[0]));
             uploadedData.setEmployeeName(cleanField(rawFields[1]));
             uploadedData.setEmployerRegNo((rawFields[2]));
             uploadedData.setToliRegNo((rawFields[3]));

@@ -35,8 +35,8 @@ public class WorkerUploadedData {
     @Column(name = "toli_id")
     private Long toliId;
 
-    @Column(name = "worker_id")
-    private Long workerId;
+    @Column(name = "worker_regno", length = 50)
+    private String workerRegno;
 
     @Column(name = "employee_name", length = 255)
     private String employeeName;
@@ -47,7 +47,7 @@ public class WorkerUploadedData {
     @Column(name = "toli_reg_no")
     private String toliRegNo;
 
-    @Column(name = "month", length = 50)
+    @Column(name = "year_month", length = 50)
     private String month;
 
     @Column(name = "day1")
@@ -213,12 +213,12 @@ public class WorkerUploadedData {
         this.id = id;
     }
 
-    public Long getWorkerId() {
-        return workerId;
+    public String getWorkerRegno() {
+        return workerRegno;
     }
 
-    public void setWorkerId(Long workerId) {
-        this.workerId = workerId;
+    public void setWorkerRegno(String workerRegno) {
+        this.workerRegno = workerRegno;
     }
 
     public String getEmployeeName() {
