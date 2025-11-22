@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.paymentflow.worker.entity.WorkerUploadedData;
 import com.example.paymentflow.worker.service.WorkerPaymentFileService;
 import com.example.paymentflow.worker.service.WorkerUploadedDataService;
+import com.shared.common.annotation.Auditable;
 import com.shared.common.annotation.SecurePagination;
 import com.shared.common.annotation.UiType;
 import com.shared.common.dto.SecurePaginationRequest;
@@ -66,6 +67,7 @@ public class WorkerUploadedDataController {
             "Prevents unrestricted data access and implements tamper-proof pagination tokens. Supports optional fileId filter.")
     @SecurePagination
     @UiType(value = UiTypes.LIST, usage = "Display paginated list of uploaded data with sorting and filtering")
+    @Auditable(action = "FETCH_SECURE_PAGINATED_UPLOADED_DATA", resourceType = "WORKER_UPLOADED_DATA")
     public ResponseEntity<?> getSecurePaginatedUploadedData(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Secure pagination request with mandatory date range", required = true) @Valid @RequestBody SecurePaginationRequest request,
             HttpServletRequest httpRequest) {
