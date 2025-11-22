@@ -18,6 +18,12 @@ public interface UploadedFileRepository extends JpaRepository<UploadedFile, Long
     List<UploadedFile> findByStatus(String status);
     List<UploadedFile> findByFileTypeOrderByUploadDateDesc(String fileType);
     List<UploadedFile> findByStatusOrderByUploadDateDesc(String status);
+
+    @Query("SELECT uf FROM UploadedFile uf WHERE uf.filename = :filename AND (uf.status IS NULL OR uf.status <> 'SUPERSEDED')")
+    Optional<UploadedFile> findActiveByFilename(@Param("filename") String filename);
+
+    @Query("SELECT uf FROM UploadedFile uf WHERE uf.fileHash = :fileHash AND (uf.status IS NULL OR uf.status <> 'SUPERSEDED')")
+    Optional<UploadedFile> findActiveByFileHash(@Param("fileHash") String fileHash);
     
     @Query("SELECT uf FROM UploadedFile uf WHERE uf.uploadDate BETWEEN :startDate AND :endDate ORDER BY uf.uploadDate DESC")
     List<UploadedFile> findByUploadDateBetweenOrderByUploadDateDesc(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);

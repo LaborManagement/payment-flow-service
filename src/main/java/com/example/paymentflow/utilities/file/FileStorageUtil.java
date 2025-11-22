@@ -57,14 +57,14 @@ public class FileStorageUtil {
     private UploadedFile storeFileInternal(MultipartFile file, String category, String fileName, Integer boardId,
             Integer employerId, Integer toliId) throws IOException {
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename != null && uploadedFileRepository.findByFilename(originalFilename).isPresent()) {
+        if (originalFilename != null && uploadedFileRepository.findActiveByFilename(originalFilename).isPresent()) {
             throw new IOException("Duplicate file: a file with the same name already exists.");
         }
 
         FileMetadata metadata = fileStorageService.storeFile(file, category, fileName);
 
         if (!metadata.getFileHash().isEmpty()
-                && uploadedFileRepository.findByFileHash(metadata.getFileHash()).isPresent()) {
+                && uploadedFileRepository.findActiveByFileHash(metadata.getFileHash()).isPresent()) {
             // Delegate file deletion to FileStorageService
             fileStorageService.deleteFileByPath(metadata.getStoredPath());
             throw new IOException("Duplicate file: a file with the same content already exists.");

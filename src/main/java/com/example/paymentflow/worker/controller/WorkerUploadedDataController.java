@@ -120,7 +120,8 @@ public class WorkerUploadedDataController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload worker payment file", description = "Upload CSV, XLS, or XLSX file containing worker payment data. Returns fileId for subsequent operations.")
     @UiType(value = UiTypes.UPLOAD, usage = "File upload button for worker payment data")
-    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
+            @RequestParam(value = "replaceFileId", required = false) String replaceFileId) {
         try {
             // File type check
             String filename = file.getOriginalFilename();
@@ -150,7 +151,7 @@ public class WorkerUploadedDataController {
                         "message", "File upload failed due to empty file"));
             }
 
-            Map<String, Object> result = fileService.handleFileUpload(file);
+            Map<String, Object> result = fileService.handleFileUpload(file, replaceFileId);
 
             if (result.containsKey("error")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);

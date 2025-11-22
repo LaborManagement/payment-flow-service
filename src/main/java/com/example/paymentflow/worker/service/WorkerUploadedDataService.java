@@ -250,12 +250,7 @@ public class WorkerUploadedDataService {
                     fileSummary.put("totalRecords", totalRecords);
                     fileSummary.put("validatedCount", validatedCount);
                     fileSummary.put("totalValidatedAmount", totalValidatedAmount);
-                    fileSummary.put("statusSummary", statusSummary);
                     fileSummary.put("overallStatus", overallStatus);
-
-                    // Add ready for payment flag
-                    boolean readyForPayment = validatedCount > 0;
-                    fileSummary.put("readyForPayment", readyForPayment);
 
                     // Add upload timestamp for sorting
                     fileSummary.put("uploadTimestamp", file.getUploadDate());

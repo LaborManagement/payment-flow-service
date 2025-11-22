@@ -63,7 +63,7 @@ public class WorkerPaymentFileService {
         return tenantAccess;
     }
 
-    public Map<String, Object> handleFileUpload(MultipartFile file) {
+    public Map<String, Object> handleFileUpload(MultipartFile file, String replaceFileId) {
         log.info("Received file upload: name={}, size={} bytes", file.getOriginalFilename(), file.getSize());
 
         try {
@@ -72,6 +72,12 @@ public class WorkerPaymentFileService {
             Long boardId = tenantAccess.boardId != null ? tenantAccess.boardId.longValue() : null;
             Long employerId = tenantAccess.employerId != null ? tenantAccess.employerId.longValue() : null;
             Long toliId = tenantAccess.toliId != null ? tenantAccess.toliId.longValue() : null;
+
+            // Optionally supersede an existing file before storing the new one
+            UploadedFile supersededFile = null;
+            if (replaceFileId != null && !replaceFileId.isBlank()) {
+                supersededFile = supersedeExistingFile(replaceFileId);
+            }
 
             // Use the new method that returns the entity directly to avoid lookup issues
             UploadedFile uploadedFile = fileStorageUtil.storeFileAndReturnEntity(file, "workerpayments", fileName,
@@ -123,6 +129,9 @@ public class WorkerPaymentFileService {
                     "File uploaded successfully. Validation executed in DB.");
             response.put("path", storedPath);
             response.put("recordCount", savedData.size());
+            if (supersededFile != null) {
+                response.put("supersededFileId", supersededFile.getId());
+            }
             if (validationOutcome != null) {
                 response.put("validation", Map.of(
                         "total", validationOutcome.totalRecords,
@@ -150,6 +159,21 @@ public class WorkerPaymentFileService {
                 errorMessage = e.getClass().getSimpleName() + " - " + e.toString();
             }
             return Map.of("error", "Failed to process uploaded file: " + errorMessage);
+        }
+    }
+
+    private UploadedFile supersedeExistingFile(String replaceFileId) {
+        try {
+            Long id = Long.parseLong(replaceFileId);
+            Optional<UploadedFile> existing = uploadedFileRepository.findById(id);
+            if (existing.isEmpty()) {
+                throw new IllegalArgumentException("File to supersede not found");
+            }
+            UploadedFile file = existing.get();
+            file.setStatus("SUPERSEDED");
+            return uploadedFileRepository.save(file);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid replaceFileId: " + replaceFileId, ex);
         }
     }
 
@@ -496,7 +520,7 @@ public class WorkerPaymentFileService {
 
         try {
             // Process the new file similar to initial upload
-            Map<String, Object> result = handleFileUpload(file);
+            Map<String, Object> result = handleFileUpload(file, null);
 
             if (result.containsKey("error")) {
                 return result;
