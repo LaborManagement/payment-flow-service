@@ -52,6 +52,9 @@ public class WorkerPaymentFileService {
     @Autowired
     private TenantAccessDao tenantAccessDao;
 
+    @Autowired
+    private DbProcedureExecutor dbProcedureExecutor;
+
     private TenantAccessDao.TenantAccess requireTenantAccess() {
         TenantAccessDao.TenantAccess tenantAccess = tenantAccessDao.getFirstAccessibleTenant();
         if (tenantAccess == null || tenantAccess.boardId == null) {
@@ -97,13 +100,52 @@ public class WorkerPaymentFileService {
             log.info("File {} parsed and {} records saved to WorkerUploadedData (fileId={})",
                     file.getOriginalFilename(), savedData.size(), fileId);
 
+            // Run DB-side validation and payments
+            DbProcedureExecutor.ValidationOutcome validationOutcome = null;
+            String receiptNumber = null;
+            String procError = null;
+            try {
+                validationOutcome = dbProcedureExecutor.validateUploadedData(fileId);
+                uploadedFile.setSuccessCount(validationOutcome.validCount);
+                uploadedFile.setFailureCount(validationOutcome.invalidCount);
+                uploadedFile.setStatus(validationOutcome.allValid ? "VALIDATED" : "VALIDATION_FAILED");
+                uploadedFileRepository.save(uploadedFile);
+
+                if (validationOutcome.allValid && validationOutcome.validCount > 0) {
+                    receiptNumber = dbProcedureExecutor.createPayments(fileId);
+                    uploadedFile.setStatus("REQUEST_GENERATED");
+                    uploadedFileRepository.save(uploadedFile);
+                }
+            } catch (Exception procEx) {
+                log.error("Proc execution failed for fileId={}", fileId, procEx);
+                procError = procEx.getMessage();
+                uploadedFile.setStatus("VALIDATION_FAILED");
+                uploadedFileRepository.save(uploadedFile);
+            }
+
             // Create response map step by step to identify any null values
             Map<String, Object> response = new HashMap<>();
             response.put("fileId", fileId);
             response.put("message",
-                    "File uploaded successfully. " + savedData.size() + " records loaded. Proceed to validation.");
+                    "File uploaded successfully. Validation executed in DB.");
             response.put("path", storedPath);
             response.put("recordCount", savedData.size());
+            if (validationOutcome != null) {
+                response.put("validation", Map.of(
+                        "total", validationOutcome.totalRecords,
+                        "valid", validationOutcome.validCount,
+                        "invalid", validationOutcome.invalidCount,
+                        "raw", validationOutcome.rawJson));
+            }
+            if (receiptNumber != null) {
+                response.put("receiptNumber", receiptNumber);
+                response.put("status", "REQUEST_GENERATED");
+            } else {
+                response.put("status", uploadedFile.getStatus());
+            }
+            if (procError != null) {
+                response.put("procError", procError);
+            }
 
             log.info("Returning response: {}", response);
             return response;
@@ -176,9 +218,9 @@ public class WorkerPaymentFileService {
             for (com.example.paymentflow.worker.entity.WorkerUploadedData data : uploadedDataList) {
                 Map<String, Object> record = createUploadedDataSummary(data);
 
-                if ("VALIDATED".equals(data.getStatus())) {
+                if ("2".equals(data.getStatusId())) {
                     passedRecords.add(record);
-                } else if ("REJECTED".equals(data.getStatus())) {
+                } else if ("3".equals(data.getStatusId())) {
                     failedRecords.add(record);
                 }
             }
@@ -301,12 +343,7 @@ public class WorkerPaymentFileService {
 
             org.springframework.data.domain.Page<com.example.paymentflow.worker.entity.WorkerUploadedData> dataPage;
 
-            if (status != null && !status.trim().isEmpty()) {
-                dataPage = workerUploadedDataService.findByFileIdAndStatusPaginated(fileId, status.trim().toUpperCase(),
-                        pageable);
-            } else {
-                dataPage = workerUploadedDataService.findByFileIdPaginated(fileId, pageable);
-            }
+            dataPage = workerUploadedDataService.findByFileIdPaginated(fileId, pageable);
 
             // Convert to summary format
             List<Map<String, Object>> records = new ArrayList<>();
@@ -708,7 +745,7 @@ public class WorkerPaymentFileService {
         uploadedData.setBoardId(boardId);
         uploadedData.setEmployerId(employerId);
         uploadedData.setToliId(toliId);
-        uploadedData.setStatus("UPLOADED");
+        uploadedData.setStatusId(1);
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         uploadedData.setCreatedAt(now);
         uploadedData.setUpdatedAt(now);

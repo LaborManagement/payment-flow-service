@@ -65,9 +65,10 @@ public class WorkerPaymentReceiptService {
             throw new IllegalArgumentException("Cannot create receipt for empty payment list");
         }
         
-        // Calculate total amount
+        // Calculate total amount using new wage fields
         BigDecimal totalAmount = processedPayments.stream()
-                .map(WorkerPayment::getPaymentAmount)
+                .map(wp -> wp.getNetWagesPayable() != null ? wp.getNetWagesPayable()
+                        : (wp.getGrossWages() != null ? wp.getGrossWages() : wp.getBasicWages()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         // Generate receipt number
@@ -75,8 +76,8 @@ public class WorkerPaymentReceiptService {
         
         // Get employer_id and toli_id from the first payment (all payments in a batch should have the same employer/toli)
         WorkerPayment firstPayment = processedPayments.get(0);
-        String employerId = firstPayment.getEmployerId();
-        String toliId = firstPayment.getToliId();
+        String employerId = firstPayment.getEmployerId() != null ? firstPayment.getEmployerId().toString() : null;
+        String toliId = firstPayment.getToliId() != null ? firstPayment.getToliId().toString() : null;
         
         // Create receipt
         WorkerPaymentReceipt receipt = new WorkerPaymentReceipt();

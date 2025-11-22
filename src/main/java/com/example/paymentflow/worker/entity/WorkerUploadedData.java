@@ -131,8 +131,8 @@ public class WorkerUploadedData {
     @Column(name = "txn_ref", length = 255)
     private String txnRef;
 
-    @Column(name = "status", length = 50)
-    private String status;
+    @Column(name = "status_id")
+    private Integer statusId;
 
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
@@ -186,12 +186,12 @@ public class WorkerUploadedData {
     }
 
     // Getters and setters for all fields
-    public String getStatus() {
-        return status;
+    public Integer getStatusId() {
+        return statusId;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setStatusId(Integer statusId) {
+        this.statusId = statusId;
     }
 
     public String getRejectionReason() {

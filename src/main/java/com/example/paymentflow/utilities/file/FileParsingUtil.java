@@ -46,28 +46,23 @@ public class FileParsingUtil {
             }
 
             WorkerPayment payment = new WorkerPayment();
-            payment.setWorkerRef(rowData[0] != null ? rowData[0].trim() : "");
-            payment.setRegId(rowData[1] != null ? rowData[1].trim() : "");
-            payment.setName(rowData[2] != null ? rowData[2].trim() : "");
-            payment.setToli(rowData[3] != null ? rowData[3].trim() : "");
-            payment.setAadhar(rowData[4] != null ? rowData[4].trim() : "");
-            payment.setPan(rowData[5] != null ? rowData[5].trim() : "");
-            payment.setBankAccount(rowData[6] != null ? rowData[6].trim() : "");
+            payment.setWorkerId(parseLong(rowData[0]));
+            payment.setToliId(parseLong(rowData[3]));
 
             // Parse payment amount
             String amountStr = rowData[7] != null ? rowData[7].trim() : "0";
             try {
                 // Handle numeric values that might be in scientific notation
                 double amount = Double.parseDouble(amountStr);
-                payment.setPaymentAmount(BigDecimal.valueOf(amount));
+                payment.setBasicWages(BigDecimal.valueOf(amount));
             } catch (NumberFormatException e) {
                 log.warn("Invalid payment amount '{}', setting to 0", amountStr);
-                payment.setPaymentAmount(BigDecimal.ZERO);
+                payment.setBasicWages(BigDecimal.ZERO);
             }
 
             // Validate required fields
-            if (payment.getWorkerRef().isEmpty() || payment.getName().isEmpty()) {
-                log.warn("Row missing required fields (workerRef or name), skipping");
+            if (payment.getWorkerId() == null) {
+                log.warn("Row missing required workerId, skipping");
                 return null;
             }
 
@@ -83,5 +78,16 @@ public class FileParsingUtil {
             return "";
         }
         return filename.substring(filename.lastIndexOf('.') + 1);
+    }
+
+    private Long parseLong(String value) {
+        try {
+            if (value == null || value.isBlank()) {
+                return null;
+            }
+            return Long.parseLong(value.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

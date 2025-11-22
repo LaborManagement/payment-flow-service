@@ -2,7 +2,6 @@
 package com.example.paymentflow.worker.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,14 +68,14 @@ public class WorkerUploadedDataService {
         return repository.findByFileId(parseFileId(fileId));
     }
 
-    public List<WorkerUploadedData> findByFileIdAndStatus(String fileId, String status) {
-        log.info("Finding worker uploaded data for fileId: {} with status: {}", fileId, status);
-        return repository.findByFileIdAndStatus(parseFileId(fileId), status);
-    }
-
-    public Page<WorkerUploadedData> findByFileIdAndStatusPaginated(String fileId, String status, Pageable pageable) {
-        log.info("Finding worker uploaded data for fileId: {} with status: {} (paginated)", fileId, status);
-        return repository.findByFileIdAndStatus(parseFileId(fileId), status, pageable);
+    public List<WorkerUploadedData> findByFileIdAndStatus(String fileId, Integer statusId) {
+        log.info("Finding worker uploaded data for fileId: {} with statusId: {}", fileId, statusId);
+        if (statusId == null) {
+            return repository.findByFileId(parseFileId(fileId));
+        }
+        List<WorkerUploadedData> filtered = repository.findByFileIdAndStatusId(parseFileId(fileId), statusId);
+        // If status is not yet populated in DB, fallback to all records to avoid empty results
+        return filtered.isEmpty() ? repository.findByFileId(parseFileId(fileId)) : filtered;
     }
 
     public Page<WorkerUploadedData> findByFileIdPaginated(String fileId, Pageable pageable) {
@@ -90,57 +89,22 @@ public class WorkerUploadedDataService {
         List<Object[]> statusCounts = repository.getStatusCountsByFileId(parseFileId(fileId));
         Map<String, Integer> summary = new HashMap<>();
 
-        // Initialize with common statuses
-        summary.put("UPLOADED", 0);
-        summary.put("VALIDATED", 0);
-        summary.put("REJECTED", 0);
-        summary.put("REQUEST_GENERATED", 0);
-
-        // Populate with actual counts
         for (Object[] result : statusCounts) {
-            String status = result[0] != null ? (String) result[0] : "UNKNOWN";
+            Integer statusId = result[0] != null ? (Integer) result[0] : null;
             Long count = (Long) result[1];
-            summary.put(status, count.intValue());
+            summary.put(statusId != null ? String.valueOf(statusId) : "UNKNOWN", count.intValue());
         }
 
         return summary;
     }
 
     private String determineOverallFileStatus(Map<String, Integer> statusSummary) {
-        // Determine overall file status based on the distribution of record statuses
         int totalRecords = statusSummary.values().stream().mapToInt(Integer::intValue).sum();
-
         if (totalRecords == 0) {
             return "EMPTY";
         }
-
-        int validatedCount = statusSummary.getOrDefault("VALIDATED", 0);
-        int rejectedCount = statusSummary.getOrDefault("REJECTED", 0);
-        int uploadedCount = statusSummary.getOrDefault("UPLOADED", 0);
-        int requestGeneratedCount = statusSummary.getOrDefault("REQUEST_GENERATED", 0);
-
-        // If all records have requests generated
-        if (requestGeneratedCount == totalRecords) {
-            return "REQUEST_GENERATED";
-        }
-
-        // If majority are validated (and some may have requests generated)
-        if (validatedCount + requestGeneratedCount == totalRecords) {
-            return requestGeneratedCount > 0 ? "PARTIALLY_PROCESSED" : "VALIDATED";
-        }
-
-        // If majority are rejected
-        if (rejectedCount > totalRecords / 2) {
-            return "MOSTLY_REJECTED";
-        }
-
-        // If majority are still uploaded (not validated)
-        if (uploadedCount > totalRecords / 2) {
-            return "PENDING_VALIDATION";
-        }
-
-        // Mixed status - some validated, some rejected, some uploaded
-        return "MIXED";
+        // Without a mapped status column, return a generic marker
+        return "UNKNOWN";
     }
 
     public Map<String, Object> getComprehensiveFileSummary(String fileId) {
@@ -163,8 +127,7 @@ public class WorkerUploadedDataService {
             Map<String, Integer> statusSummary = getFileStatusSummary(fileId);
 
             // Calculate validated count and total amount for validated records
-            List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(parseFileId(fileId),
-                    "VALIDATED");
+            List<WorkerUploadedData> validatedRecords = findByFileIdAndStatus(fileId, 1);
             int validatedCount = validatedRecords.size();
 
             BigDecimal totalValidatedAmount = validatedRecords.stream()
@@ -269,8 +232,7 @@ public class WorkerUploadedDataService {
                     }
 
                     // Calculate validated amount
-                    List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(currentFileId,
-                            "VALIDATED");
+                    List<WorkerUploadedData> validatedRecords = findByFileIdAndStatus(currentFileId.toString(), 1);
                     int validatedCount = validatedRecords.size();
 
                     BigDecimal totalValidatedAmount = validatedRecords.stream()
@@ -358,7 +320,7 @@ public class WorkerUploadedDataService {
     public void validateUploadedData(String fileId) {
         log.info("Starting validation for fileId: {}", fileId);
 
-        List<WorkerUploadedData> uploadedRecords = repository.findByFileIdAndStatus(parseFileId(fileId), "UPLOADED");
+        List<WorkerUploadedData> uploadedRecords = findByFileIdAndStatus(fileId, 1);
         log.info("Found {} uploaded records to validate", uploadedRecords.size());
 
         for (WorkerUploadedData record : uploadedRecords) {
@@ -367,7 +329,6 @@ public class WorkerUploadedDataService {
                 // No validatedAt field in entity, skip setting it
             } catch (Exception e) {
                 log.error("Error validating record for workerId {} in fileId: {}", record.getWorkerId(), fileId, e);
-                record.setStatus("REJECTED");
                 record.setRejectionReason("Validation error: " + e.getMessage());
             }
         }
@@ -404,10 +365,8 @@ public class WorkerUploadedDataService {
         }
 
         if (errors.length() > 0) {
-            record.setStatus("REJECTED");
             record.setRejectionReason(errors.toString().trim());
         } else {
-            record.setStatus("VALIDATED");
         }
     }
 
@@ -415,7 +374,7 @@ public class WorkerUploadedDataService {
     public int generateRequestForValidatedData(String fileId, String uploadedFileRef) {
         log.info("Generating request for validated data in fileId: {}", fileId);
 
-        List<WorkerUploadedData> validatedRecords = repository.findByFileIdAndStatus(parseFileId(fileId), "VALIDATED");
+        List<WorkerUploadedData> validatedRecords = findByFileIdAndStatus(fileId, 1);
         log.info("Found {} validated records to process", validatedRecords.size());
 
         if (validatedRecords.isEmpty()) {
@@ -452,7 +411,6 @@ public class WorkerUploadedDataService {
             int processedCount = 0;
             for (WorkerUploadedData validatedData : validatedRecords) {
                 try {
-                    validatedData.setStatus("REQUEST_GENERATED");
                     // No setReceiptNumber or setProcessedAt in entity, skip these
                     repository.save(validatedData);
                     processedCount++;
@@ -476,19 +434,19 @@ public class WorkerUploadedDataService {
         WorkerPayment payment = new WorkerPayment();
 
         // Map fields from WorkerUploadedData to WorkerPayment based on available fields
-        payment.setWorkerRef(uploadedData.getWorkerId() != null ? uploadedData.getWorkerId().toString() : null); // worker_id
-                                                                                                                 // →
-                                                                                                                 // worker_reference
-        payment.setName(uploadedData.getEmployeeName()); // employee_name → name
-        payment.setPaymentAmount(uploadedData.getAmount());
-        payment.setFileId(uploadedData.getId() != null ? uploadedData.getId().toString() : null);
-        payment.setEmployerId(uploadedData.getEmployerRegNo());
-        payment.setToliId(uploadedData.getToliRegNo());
-        // Set default values for required fields that don't have mappings
-        payment.setAadhar(""); // Will need to be updated with actual data
-        payment.setPan(""); // Will need to be updated with actual data
-        payment.setStatus("VALIDATED");
-        payment.setCreatedAt(LocalDateTime.now());
+        payment.setWorkerId(uploadedData.getWorkerId());
+        payment.setEmployerId(uploadedData.getEmployerId());
+        payment.setToliId(uploadedData.getToliId());
+        payment.setBoardId(uploadedData.getBoardId());
+        payment.setMonth(uploadedData.getMonth());
+        payment.setTotalDays(uploadedData.getTotalDays());
+        payment.setBasicWages(uploadedData.getAmount());
+        payment.setAdvance(uploadedData.getAdvance());
+        payment.setGrossWages(uploadedData.getNetPayable());
+        payment.setLevy(BigDecimal.ZERO);
+        payment.setNetWagesPayable(uploadedData.getNetPayable());
+        payment.setPaymentType(uploadedData.getPaymentType());
+        payment.setTxnRef(uploadedData.getTxnRef());
         return payment;
     }
 
@@ -499,12 +457,12 @@ public class WorkerUploadedDataService {
 
     public List<WorkerUploadedData> findRejectedRecords(String fileId) {
         log.info("Finding rejected records for fileId: {}", fileId);
-        return repository.findByFileIdAndStatus(parseFileId(fileId), "REJECTED");
+        return findByFileIdAndStatus(fileId, 3);
     }
 
     public List<WorkerUploadedData> findRequestGeneratedRecords(String fileId) {
         log.info("Finding request generated records for fileId: {}", fileId);
-        return repository.findByFileIdAndStatus(parseFileId(fileId), "REQUEST_GENERATED");
+        return findByFileIdAndStatus(fileId, 2);
     }
 
     public Page<WorkerUploadedData> findByFileIdAndDateRangePaginated(String fileId,

@@ -134,7 +134,10 @@ public class WorkerPaymentQueryDao extends BaseQueryDao {
                 .fetch()
                 .stream()
                 .collect(Collectors.toMap(
-                        record -> record.get("status", String.class),
+                        record -> {
+                            Integer statusId = record.get("status", Integer.class);
+                            return statusId != null ? String.valueOf(statusId) : "UNKNOWN";
+                        },
                         record -> {
                             Number count = record.get("count", Number.class);
                             return count != null ? count.longValue() : 0L;
@@ -187,27 +190,21 @@ public class WorkerPaymentQueryDao extends BaseQueryDao {
         if (id != null) {
             payment.setId(id);
         }
-        payment.setWorkerRef(rs.getString("worker_reference"));
-        payment.setRegId(rs.getString("registration_id"));
-        payment.setName(rs.getString("worker_name"));
-        payment.setEmployerId(rs.getString("employer_id"));
-        payment.setToliId(rs.getString("toli_id"));
-        payment.setToli(rs.getString("toli"));
-        payment.setAadhar(rs.getString("aadhar"));
-        payment.setPan(rs.getString("pan"));
-        payment.setBankAccount(rs.getString("bank_account"));
-        payment.setPaymentAmount(rs.getBigDecimal("payment_amount"));
-        payment.setRequestReferenceNumber(rs.getString("request_reference_number"));
-        payment.setReceiptNumber(rs.getString("receipt_number"));
-        payment.setStatus(rs.getString("status"));
-        payment.setFileId(rs.getString("file_id"));
-        payment.setUploadedFileRef(rs.getString("uploaded_file_ref"));
-
-        // Handle timestamps
-        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
-        if (createdAt != null) {
-            payment.setCreatedAt(createdAt.toLocalDateTime());
-        }
+        payment.setWorkerId(rs.getObject("worker_id", Long.class));
+        payment.setToliId(rs.getObject("toli_id", Long.class));
+        payment.setEmployerId(rs.getObject("employer_id", Long.class));
+        payment.setBoardId(rs.getObject("board_id", Long.class));
+        payment.setMonth(rs.getString("month"));
+        payment.setTotalDays(rs.getObject("total_days", Integer.class));
+        payment.setBasicWages(rs.getBigDecimal("basic_wages"));
+        payment.setAdvance(rs.getBigDecimal("advance"));
+        payment.setGrossWages(rs.getBigDecimal("gross_wages"));
+        payment.setLevy(rs.getBigDecimal("levy"));
+        payment.setNetWagesPayable(rs.getBigDecimal("net_wages_payable"));
+        payment.setPaymentType(rs.getString("payment_type"));
+        payment.setTxnRef(rs.getString("txn_ref"));
+        payment.setReceiptNmbr(rs.getString("receipt_nmbr"));
+        payment.setStatusId(rs.getObject("status_id", Integer.class));
 
         return payment;
     }

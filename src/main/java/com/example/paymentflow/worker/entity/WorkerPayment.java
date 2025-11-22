@@ -1,22 +1,23 @@
 package com.example.paymentflow.worker.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import com.shared.entityaudit.annotation.EntityAuditEnabled;
 import com.shared.entityaudit.descriptor.AbstractAuditableEntity;
 import com.shared.entityaudit.listener.SharedEntityAuditListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @EntityAuditEnabled
@@ -28,80 +29,95 @@ public class WorkerPayment extends AbstractAuditableEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "worker_reference", nullable = false, length = 64)
+    @Column(name = "worker_id")
+    private Long workerId;
+
+    @Column(name = "toli_id")
+    private Long toliId;
+
+    @Column(name = "employer_id")
+    private Long employerId;
+
+    @Column(name = "board_id")
+    private Long boardId;
+
+    @Column(name = "month")
+    private String month;
+
+    @Column(name = "total_days")
+    private Integer totalDays;
+
+    @Column(name = "basic_wages", precision = 15, scale = 2)
+    @NotNull(message = "Basic wages is required")
+    @DecimalMin(value = "0.00", message = "Basic wages must be non-negative")
+    private BigDecimal basicWages;
+
+    @Column(name = "advance", precision = 15, scale = 2)
+    private BigDecimal advance;
+
+    @Column(name = "gross_wages", precision = 15, scale = 2)
+    private BigDecimal grossWages;
+
+    @Column(name = "levy", precision = 10, scale = 2)
+    private BigDecimal levy;
+
+    @Column(name = "net_wages_payable", precision = 15, scale = 2)
+    private BigDecimal netWagesPayable;
+
+    @Column(name = "payment_type")
+    private String paymentType;
+
+    @Column(name = "txn_ref")
+    private String txnRef;
+
+    @Column(name = "receipt_nmbr")
+    private String receiptNmbr;
+
+    @Column(name = "status_id")
+    private Integer statusId;
+
+    @Transient
+    private String status = "ACTIVE";
+
+    // Legacy/transient fields kept for compatibility with older code paths
+    @Transient
     private String workerRef;
 
-    @Column(name = "registration_id", nullable = false, length = 64)
+    @Transient
     private String regId;
 
-    @Column(name = "worker_name", nullable = false, length = 120)
+    @Transient
     private String name;
 
-    @Column(name = "employer_id", nullable = false, length = 64)
-    private String employerId;
-
-    @Column(name = "toli_id", nullable = false, length = 64)
-    private String toliId;
-
-    @Column(name = "toli", nullable = false, length = 64)
+    @Transient
     private String toli;
 
-    @Column(name = "aadhar", nullable = false, length = 16)
+    @Transient
     private String aadhar;
 
-    @Column(name = "pan", nullable = false, length = 16)
+    @Transient
     private String pan;
 
-    @Column(name = "bank_account", nullable = false, length = 34)
+    @Transient
     private String bankAccount;
 
-    @Column(name = "payment_amount", precision = 15, scale = 2, nullable = false)
-    @NotNull(message = "Payment amount is required")
-    @DecimalMin(value = "0.01", message = "Payment amount must be greater than 0")
+    @Transient
     private BigDecimal paymentAmount;
 
-    @Column(name = "file_id", nullable = true, length = 20)
+    @Transient
     private String fileId;
 
-    @Column(name = "uploaded_file_ref", nullable = true, length = 100)
+    @Transient
     private String uploadedFileRef;
 
-    @Column(name = "request_reference_number", nullable = false, length = 40)
+    @Transient
     private String requestReferenceNumber;
 
-    @Column(name = "status", nullable = false, length = 40)
-    private String status = "UPLOADED";
-
-    @Column(name = "receipt_number", length = 40)
+    @Transient
     private String receiptNumber;
-    
-    @Column(name = "created_at", nullable = false)
+
+    @Transient
     private LocalDateTime createdAt;
-    
-    public String getReceiptNumber() {
-        return receiptNumber;
-    }
-
-    public void setReceiptNumber(String receiptNumber) {
-        this.receiptNumber = receiptNumber;
-    }
-
-    public WorkerPayment() {
-    }
-
-    @PrePersist
-    public void prePersist() {
-        if (Objects.isNull(requestReferenceNumber) || requestReferenceNumber.isBlank()) {
-            requestReferenceNumber = "WRK-" + UUID.randomUUID()
-                    .toString()
-                    .replace("-", "")
-                    .substring(0, 12)
-                    .toUpperCase();
-        }
-        if (Objects.isNull(createdAt)) {
-            createdAt = LocalDateTime.now();
-        }
-    }
 
     public Long getId() {
         return id;
@@ -135,20 +151,124 @@ public class WorkerPayment extends AbstractAuditableEntity<Long> {
         this.name = name;
     }
 
-    public String getEmployerId() {
-        return employerId;
+    public Long getWorkerId() {
+        return workerId;
     }
 
-    public void setEmployerId(String employerId) {
-        this.employerId = employerId;
+    public void setWorkerId(Long workerId) {
+        this.workerId = workerId;
     }
 
-    public String getToliId() {
+    public Long getToliId() {
         return toliId;
     }
 
-    public void setToliId(String toliId) {
+    public void setToliId(Long toliId) {
         this.toliId = toliId;
+    }
+
+    public Long getEmployerId() {
+        return employerId;
+    }
+
+    public void setEmployerId(Long employerId) {
+        this.employerId = employerId;
+    }
+
+    public Long getBoardId() {
+        return boardId;
+    }
+
+    public void setBoardId(Long boardId) {
+        this.boardId = boardId;
+    }
+
+    public String getMonth() {
+        return month;
+    }
+
+    public void setMonth(String month) {
+        this.month = month;
+    }
+
+    public Integer getTotalDays() {
+        return totalDays;
+    }
+
+    public void setTotalDays(Integer totalDays) {
+        this.totalDays = totalDays;
+    }
+
+    public BigDecimal getBasicWages() {
+        return basicWages;
+    }
+
+    public void setBasicWages(BigDecimal basicWages) {
+        this.basicWages = basicWages;
+    }
+
+    public BigDecimal getAdvance() {
+        return advance;
+    }
+
+    public void setAdvance(BigDecimal advance) {
+        this.advance = advance;
+    }
+
+    public BigDecimal getGrossWages() {
+        return grossWages;
+    }
+
+    public void setGrossWages(BigDecimal grossWages) {
+        this.grossWages = grossWages;
+    }
+
+    public BigDecimal getLevy() {
+        return levy;
+    }
+
+    public void setLevy(BigDecimal levy) {
+        this.levy = levy;
+    }
+
+    public BigDecimal getNetWagesPayable() {
+        return netWagesPayable;
+    }
+
+    public void setNetWagesPayable(BigDecimal netWagesPayable) {
+        this.netWagesPayable = netWagesPayable;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
+    }
+
+    public String getTxnRef() {
+        return txnRef;
+    }
+
+    public void setTxnRef(String txnRef) {
+        this.txnRef = txnRef;
+    }
+
+    public String getReceiptNmbr() {
+        return receiptNmbr;
+    }
+
+    public void setReceiptNmbr(String receiptNmbr) {
+        this.receiptNmbr = receiptNmbr;
+    }
+
+    public BigDecimal getPaymentAmount() {
+        return basicWages;
+    }
+
+    public void setPaymentAmount(BigDecimal paymentAmount) {
+        this.basicWages = paymentAmount;
     }
 
     public String getToli() {
@@ -183,14 +303,6 @@ public class WorkerPayment extends AbstractAuditableEntity<Long> {
         this.bankAccount = bankAccount;
     }
 
-    public BigDecimal getPaymentAmount() {
-        return paymentAmount;
-    }
-
-    public void setPaymentAmount(BigDecimal paymentAmount) {
-        this.paymentAmount = paymentAmount;
-    }
-
     public String getFileId() {
         return fileId;
     }
@@ -223,6 +335,14 @@ public class WorkerPayment extends AbstractAuditableEntity<Long> {
         this.status = status;
     }
 
+    public String getReceiptNumber() {
+        return receiptNmbr;
+    }
+
+    public void setReceiptNumber(String receiptNumber) {
+        this.receiptNmbr = receiptNumber;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -240,22 +360,24 @@ public class WorkerPayment extends AbstractAuditableEntity<Long> {
     public Map<String, Object> auditState() {
         return auditStateOf(
                 "id", id,
-                "workerRef", workerRef,
-                "regId", regId,
-                "name", name,
+                "workerId", workerId,
                 "employerId", employerId,
+                "boardId", boardId,
                 "toliId", toliId,
-                "toli", toli,
-                "aadhar", aadhar,
-                "pan", pan,
-                "bankAccount", bankAccount,
-                "paymentAmount", paymentAmount != null ? paymentAmount.toPlainString() : null,
-                "fileId", fileId,
-                "uploadedFileRef", uploadedFileRef,
-                "requestReferenceNumber", requestReferenceNumber,
-                "status", status,
-                "receiptNumber", receiptNumber,
-                "createdAt", createdAt != null ? createdAt.toString() : null
-        );
+                "month", month,
+                "totalDays", totalDays,
+                "basicWages", basicWages,
+                "advance", advance,
+                "grossWages", grossWages,
+                "levy", levy,
+                "netWagesPayable", netWagesPayable,
+                "paymentType", paymentType,
+                "txnRef", txnRef,
+                "receiptNmbr", receiptNmbr);
+    }
+
+    public void setStatusId(Integer object) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setStatusId'");
     }
 }
